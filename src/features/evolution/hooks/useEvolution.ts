@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
+import { toastError, toastSuccess } from '../../../components/toast'
 import { queryKeys } from '../../../lib/queryKeys'
 import { DEFAULT_WORKSPACE_ID } from '../../../lib/workspace'
 import { isSupabaseConfigured } from '../../../lib/supabaseClient'
@@ -36,9 +37,20 @@ export function useCreateEvolution(patientId: string) {
       if (error) throw error
       return data
     },
-    onSuccess: () =>
+    onSuccess: () => {
+      toastSuccess('Evolução registada.')
       void qc.invalidateQueries({
         queryKey: queryKeys.evolution(patientId),
-      }),
+      })
+      void qc.invalidateQueries({
+        queryKey: queryKeys.dashboard.evolutionOverview,
+      })
+      void qc.invalidateQueries({
+        queryKey: queryKeys.dashboard.summary,
+      })
+    },
+    onError: (err) => {
+      toastError(err instanceof Error ? err : new Error(String(err)))
+    },
   })
 }

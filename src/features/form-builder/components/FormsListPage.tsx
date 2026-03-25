@@ -16,26 +16,25 @@ import {
   TableRow,
   Typography,
 } from '@mui/material'
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
+import { useToast } from '../../../components/toast'
 import { useFormTemplateMutations, useFormTemplates } from '../hooks/useFormTemplates'
 
 export function FormsListPage() {
   const { data, isLoading, isError, error } = useFormTemplates()
   const { createLink } = useFormTemplateMutations()
-  const [copied, setCopied] = useState<string | null>(null)
+  const { showSuccess, showError } = useToast()
 
   const handleCreateLink = async (templateId: string) => {
     try {
       const row = await createLink.mutateAsync(templateId)
       const url = `${window.location.origin}/f/${row.public_token}`
       await navigator.clipboard.writeText(url)
-      setCopied(row.id)
-      setTimeout(() => setCopied(null), 3000)
-    } catch {
-      /* mutation error */
+      showSuccess('Link público copiado para a área de transferência.')
+    } catch (e) {
+      showError(e instanceof Error ? e : new Error(String(e)))
     }
   }
 
@@ -64,16 +63,6 @@ export function FormsListPage() {
         </Button>
       </Box>
       <SupabaseConfigAlert />
-      {copied ? (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          Link público copiado para a área de transferência.
-        </Alert>
-      ) : null}
-      {createLink.error ? (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {(createLink.error as Error).message}
-        </Alert>
-      ) : null}
       {isLoading ? <CircularProgress /> : null}
       {isError ? (
         <Alert severity="error">{(error as Error).message}</Alert>

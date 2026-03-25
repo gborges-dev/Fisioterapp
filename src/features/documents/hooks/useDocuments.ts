@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
+import { toastError, toastSuccess } from '../../../components/toast'
 import { queryKeys } from '../../../lib/queryKeys'
 import { DEFAULT_WORKSPACE_ID } from '../../../lib/workspace'
 import { isSupabaseConfigured } from '../../../lib/supabaseClient'
@@ -41,10 +42,15 @@ export function useUploadDocument(patientId: string) {
       if (error) throw error
       return data
     },
-    onSuccess: () =>
+    onSuccess: () => {
+      toastSuccess('Documento enviado com sucesso.')
       void qc.invalidateQueries({
         queryKey: queryKeys.documents(patientId),
-      }),
+      })
+    },
+    onError: (err) => {
+      toastError(err instanceof Error ? err : new Error(String(err)))
+    },
   })
 }
 

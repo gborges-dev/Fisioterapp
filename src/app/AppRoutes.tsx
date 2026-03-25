@@ -6,6 +6,7 @@ import { DocumentsPage } from '../features/documents/components/DocumentsPage'
 import { EvolutionPage } from '../features/evolution/components/EvolutionPage'
 import { FormEditorPage } from '../features/form-builder/components/FormEditorPage'
 import { FormsListPage } from '../features/form-builder/components/FormsListPage'
+import { PatientComparePage } from '../features/patients/components/PatientComparePage'
 import { PatientDetailPage } from '../features/patients/components/PatientDetailPage'
 import { PatientFormPage } from '../features/patients/components/PatientFormPage'
 import { PatientListPage } from '../features/patients/components/PatientListPage'
@@ -20,10 +21,11 @@ export function AppRoutes() {
         <Route path="patients">
           <Route index element={<PatientListPage />} />
           <Route path="new" element={<PatientFormPage />} />
-          <Route path=":id" element={<PatientDetailPage />} />
+          <Route path=":id/comparar" element={<PatientComparePage />} />
           <Route path=":id/edit" element={<PatientFormPage />} />
           <Route path=":id/evolution" element={<EvolutionPage />} />
           <Route path=":id/documents" element={<DocumentsPage />} />
+          <Route path=":id" element={<PatientDetailPage />} />
         </Route>
         <Route path="forms">
           <Route index element={<FormsListPage />} />

@@ -17,6 +17,7 @@ import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
+import { useToast } from '../../../components/toast'
 import type { FormFieldSchema, Json } from '../../../types/database.types'
 import { useFormTemplate, useFormTemplateMutations } from '../hooks/useFormTemplates'
 import { parseFormSchema } from '../services/formsApi'
@@ -78,6 +79,7 @@ function FormEditorFields({
   initial: FormTemplateRow | null
 }) {
   const navigate = useNavigate()
+  const { showSuccess, showError } = useToast()
   const { create, update } = useFormTemplateMutations()
   const isNew = !initial
 
@@ -107,6 +109,7 @@ function FormEditorFields({
           title: title.trim(),
           schema: fields,
         })
+        showSuccess('Formulário criado.')
         void navigate(`/forms/${row.id}/edit`)
       } else if (templateId) {
         await update.mutateAsync({
@@ -114,9 +117,10 @@ function FormEditorFields({
           title: title.trim(),
           schema: fields,
         })
+        showSuccess('Alterações guardadas.')
       }
-    } catch {
-      /* mutation */
+    } catch (e) {
+      showError(e instanceof Error ? e : new Error(String(e)))
     }
   }
 

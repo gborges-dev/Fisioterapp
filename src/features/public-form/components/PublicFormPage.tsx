@@ -12,6 +12,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 
+import { toastError, toastSuccess } from '../../../components/toast'
 import { queryKeys } from '../../../lib/queryKeys'
 import { isSupabaseConfigured } from '../../../lib/supabaseClient'
 import type { FormFieldSchema, Json } from '../../../types/database.types'
@@ -40,7 +41,13 @@ export function PublicFormPage() {
       if (error) throw error
       return data
     },
-    onSuccess: () => setDone(true),
+    onSuccess: () => {
+      toastSuccess('Resposta enviada com sucesso.')
+      setDone(true)
+    },
+    onError: (err) => {
+      toastError(err instanceof Error ? err : new Error(String(err)))
+    },
   })
 
   const fields: FormFieldSchema[] = useMemo(

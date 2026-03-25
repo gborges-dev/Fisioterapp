@@ -6,14 +6,17 @@ export const queryKeys = {
   patients: {
     all: [workspaceId, 'patients'] as const,
     detail: (id: string) => [workspaceId, 'patients', id] as const,
+    history: (id: string) => [workspaceId, 'patients', id, 'history'] as const,
+    surgery: (id: string) => [workspaceId, 'patients', id, 'surgery'] as const,
+  },
+  dashboard: {
+    summary: [workspaceId, 'dashboard', 'summary'] as const,
+    evolutionOverview: [workspaceId, 'dashboard', 'evolution-overview'] as const,
   },
   evolution: (patientId: string) =>
     [workspaceId, 'evolution', patientId] as const,
   documents: (patientId: string) =>
     [workspaceId, 'documents', patientId] as const,
-  dashboard: {
-    summary: [workspaceId, 'dashboard', 'summary'] as const,
-  },
   forms: {
     templates: [workspaceId, 'form-templates'] as const,
     template: (id: string) => [workspaceId, 'form-templates', id] as const,

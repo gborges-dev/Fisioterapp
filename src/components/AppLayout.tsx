@@ -1,3 +1,4 @@
+import HealingOutlinedIcon from '@mui/icons-material/HealingOutlined'
 import MenuIcon from '@mui/icons-material/Menu'
 import {
   AppBar,
@@ -13,6 +14,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 
@@ -31,10 +33,28 @@ export function AppLayout() {
 
   const drawer = (
     <Box sx={{ overflow: 'auto' }}>
-      <Toolbar>
-        <Typography variant="h6" noWrap component="div">
-          Fisioterapp
-        </Typography>
+      <Toolbar sx={{ gap: 1.5, py: 2 }}>
+        <Box
+          sx={{
+            width: 40,
+            height: 40,
+            borderRadius: 2,
+            display: 'grid',
+            placeItems: 'center',
+            bgcolor: (t) => alpha(t.palette.primary.main, 0.14),
+            color: 'primary.main',
+          }}
+        >
+          <HealingOutlinedIcon fontSize="small" aria-hidden />
+        </Box>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography variant="subtitle2" color="text.secondary" noWrap>
+            Área clínica
+          </Typography>
+          <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
+            Fisioterapp
+          </Typography>
+        </Box>
       </Toolbar>
       <Divider />
       <List>
@@ -76,9 +96,12 @@ export function AppLayout() {
               <MenuIcon />
             </IconButton>
           ) : null}
-          <Typography variant="h6" component="h1" sx={{ flexGrow: 1 }}>
-            Fisioterapp
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexGrow: 1 }}>
+            <HealingOutlinedIcon sx={{ color: 'primary.main', opacity: 0.9 }} aria-hidden />
+            <Typography variant="h6" component="h1" sx={{ fontWeight: 600 }}>
+              Fisioterapp
+            </Typography>
+          </Box>
         </Toolbar>
       </AppBar>
       <Drawer
@@ -104,6 +127,9 @@ export function AppLayout() {
           p: { xs: 2, sm: 3 },
           width: { md: `calc(100% - ${drawerWidth}px)` },
           mt: { xs: 7, sm: 8 },
+          background: (t) =>
+            `linear-gradient(180deg, ${t.palette.background.default} 0%, ${t.palette.background.paper} 48%)`,
+          minHeight: '100vh',
         }}
       >
         <Outlet />
