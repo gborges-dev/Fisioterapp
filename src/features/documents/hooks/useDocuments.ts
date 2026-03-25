@@ -5,6 +5,7 @@ import { queryKeys } from '../../../lib/queryKeys'
 import { DEFAULT_WORKSPACE_ID } from '../../../lib/workspace'
 import { isSupabaseConfigured } from '../../../lib/supabaseClient'
 import {
+  deletePatientDocument,
   getPublicUrl,
   insertDocumentMeta,
   listDocuments,
@@ -44,6 +45,30 @@ export function useUploadDocument(patientId: string) {
     },
     onSuccess: () => {
       toastSuccess('Documento enviado com sucesso.')
+      void qc.invalidateQueries({
+        queryKey: queryKeys.documents(patientId),
+      })
+    },
+    onError: (err) => {
+      toastError(err instanceof Error ? err : new Error(String(err)))
+    },
+  })
+}
+
+export function useDeleteDocument(patientId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      documentId,
+      storagePath,
+    }: {
+      documentId: string
+      storagePath: string
+    }) => {
+      await deletePatientDocument(documentId, storagePath)
+    },
+    onSuccess: () => {
+      toastSuccess('Anexo eliminado.')
       void qc.invalidateQueries({
         queryKey: queryKeys.documents(patientId),
       })
