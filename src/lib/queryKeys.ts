@@ -12,6 +12,10 @@ export const queryKeys = {
   dashboard: {
     summary: [workspaceId, 'dashboard', 'summary'] as const,
     evolutionOverview: [workspaceId, 'dashboard', 'evolution-overview'] as const,
+    evolutionDaily: (days: number) =>
+      [workspaceId, 'dashboard', 'evolution-daily', days] as const,
+    submissionsDaily: (days: number) =>
+      [workspaceId, 'dashboard', 'submissions-daily', days] as const,
   },
   evolution: (patientId: string) =>
     [workspaceId, 'evolution', patientId] as const,
@@ -24,4 +28,27 @@ export const queryKeys = {
       [workspaceId, 'form-links', templateId] as const,
   },
   publicForm: (token: string) => ['public-form', token] as const,
+  reports: {
+    patientEvolution: (patientId: string, from: string, to: string) =>
+      [workspaceId, 'reports', 'patient-evolution', patientId, from, to] as const,
+    clinicSummary: (from: string, to: string) =>
+      [workspaceId, 'reports', 'clinic-summary', from, to] as const,
+    clinicEvolutionDaily: (from: string, to: string) =>
+      [workspaceId, 'reports', 'clinic-evolution-daily', from, to] as const,
+    formSubmissions: (
+      templateId: string,
+      patientId: string,
+      from: string,
+      to: string,
+    ) =>
+      [
+        workspaceId,
+        'reports',
+        'form-submissions',
+        templateId,
+        patientId,
+        from,
+        to,
+      ] as const,
+  },
 }

@@ -11,6 +11,7 @@ import {
 } from '@mui/material'
 import { Link, useParams } from 'react-router-dom'
 
+import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
 import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
 import { useEvolutionEntries } from '../../evolution/hooks/useEvolution'
 import {
@@ -36,6 +37,18 @@ export function PatientComparePage() {
 
   return (
     <Box>
+      <PageBreadcrumbs
+        items={[
+          { label: 'Painel', to: '/' },
+          { label: 'Pacientes', to: '/patients' },
+          ...(patient
+            ? [
+                { label: patient.full_name, to: `/patients/${id}` },
+                { label: 'Ficha vs evolução' },
+              ]
+            : [{ label: 'Comparar' }]),
+        ]}
+      />
       <Typography variant="h4" component="h2" gutterBottom>
         Ficha vs evolução
       </Typography>

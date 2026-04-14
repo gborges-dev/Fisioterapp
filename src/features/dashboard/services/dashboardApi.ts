@@ -23,6 +23,91 @@ export interface DashboardSummary {
   formTemplateCount: number
 }
 
+export interface DailyCountPoint {
+  /** YYYY-MM-DD */
+  date: string
+  count: number
+}
+
+function lastNDates(days: number): string[] {
+  const out: string[] = []
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date()
+    d.setHours(0, 0, 0, 0)
+    d.setDate(d.getDate() - i)
+    out.push(d.toLocaleDateString('sv-SE'))
+  }
+  return out
+}
+
+function dayFromCreatedAt(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso.slice(0, 10)
+  return d.toLocaleDateString('sv-SE')
+}
+
+/** Contagem por dia (últimos `days`) com base em entry_date. */
+export async function fetchEvolutionDailySeries(
+  workspaceId: string,
+  days: number,
+): Promise<DailyCountPoint[]> {
+  const labels = lastNDates(days)
+  const start = labels[0]!
+  const { data, error } = await supabase
+    .from('evolution_entries')
+    .select('entry_date')
+    .eq('workspace_id', workspaceId)
+    .gte('entry_date', start)
+
+  if (error) throw error
+
+  const counts = new Map<string, number>()
+  for (const day of labels) counts.set(day, 0)
+  for (const row of data ?? []) {
+    const ymd = row.entry_date as string
+    if (counts.has(ymd)) counts.set(ymd, (counts.get(ymd) ?? 0) + 1)
+  }
+
+  return labels.map((date) => ({ date, count: counts.get(date) ?? 0 }))
+}
+
+/** Contagem por dia (últimos `days`) com base em created_at das submissões do workspace. */
+export async function fetchSubmissionsDailySeries(
+  workspaceId: string,
+  days: number,
+): Promise<DailyCountPoint[]> {
+  const labels = lastNDates(days)
+  const start = new Date(labels[0]!)
+  start.setHours(0, 0, 0, 0)
+  const sinceIso = start.toISOString()
+
+  const { data: templates, error: te } = await supabase
+    .from('form_templates')
+    .select('id')
+    .eq('workspace_id', workspaceId)
+  if (te) throw te
+  const templateIds = (templates ?? []).map((t) => t.id as string)
+  if (templateIds.length === 0) {
+    return labels.map((date) => ({ date, count: 0 }))
+  }
+
+  const { data, error } = await supabase
+    .from('form_submissions')
+    .select('created_at')
+    .in('form_template_id', templateIds)
+    .gte('created_at', sinceIso)
+  if (error) throw error
+
+  const counts = new Map<string, number>()
+  for (const day of labels) counts.set(day, 0)
+  for (const row of data ?? []) {
+    const ymd = dayFromCreatedAt(row.created_at as string)
+    if (counts.has(ymd)) counts.set(ymd, (counts.get(ymd) ?? 0) + 1)
+  }
+
+  return labels.map((date) => ({ date, count: counts.get(date) ?? 0 }))
+}
+
 export async function fetchDashboardSummary(
   workspaceId: string,
 ): Promise<DashboardSummary> {

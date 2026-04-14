@@ -1,4 +1,6 @@
+import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined'
 import HealingOutlinedIcon from '@mui/icons-material/HealingOutlined'
+import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined'
 import MenuIcon from '@mui/icons-material/Menu'
 import {
   AppBar,
@@ -10,6 +12,7 @@ import {
   ListItemButton,
   ListItemText,
   Toolbar,
+  Tooltip,
   Typography,
   useMediaQuery,
   useTheme,
@@ -18,16 +21,20 @@ import { alpha } from '@mui/material/styles'
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 
+import { useColorMode } from '../theme/useColorMode'
+
 const drawerWidth = 260
 
 const navItems = [
   { to: '/', label: 'Painel' },
   { to: '/patients', label: 'Pacientes' },
   { to: '/forms', label: 'Formulários' },
+  { to: '/reports', label: 'Relatórios' },
 ] as const
 
 export function AppLayout() {
   const theme = useTheme()
+  const { mode, toggleColorMode } = useColorMode()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -102,6 +109,20 @@ export function AppLayout() {
               Fisioterapp
             </Typography>
           </Box>
+          <Tooltip
+            title={mode === 'light' ? 'Ativar tema escuro' : 'Ativar tema claro'}
+          >
+            <IconButton
+              color="inherit"
+              onClick={toggleColorMode}
+              aria-label={
+                mode === 'light' ? 'Ativar tema escuro' : 'Ativar tema claro'
+              }
+              edge="end"
+            >
+              {mode === 'light' ? <DarkModeOutlinedIcon /> : <LightModeOutlinedIcon />}
+            </IconButton>
+          </Tooltip>
         </Toolbar>
       </AppBar>
       <Drawer

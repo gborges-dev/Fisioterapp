@@ -24,7 +24,9 @@ import {
 import { useRef, useState } from 'react'
 import { Link as RouterLink, useParams } from 'react-router-dom'
 
+import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
 import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
+import { usePatient } from '../../patients/hooks/usePatients'
 import { toastError, toastSuccess } from '../../../components/toast'
 import {
   getPublicUrl,
@@ -37,6 +39,7 @@ import type { DocumentRow } from '../services/documentsApi'
 
 export function DocumentsPage() {
   const { id: patientId } = useParams<{ id: string }>()
+  const { data: patient } = usePatient(patientId)
   const inputRef = useRef<HTMLInputElement>(null)
   const [docToDelete, setDocToDelete] = useState<DocumentRow | null>(null)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
@@ -89,6 +92,18 @@ export function DocumentsPage() {
 
   return (
     <Box>
+      <PageBreadcrumbs
+        items={[
+          { label: 'Painel', to: '/' },
+          { label: 'Pacientes', to: '/patients' },
+          ...(patient && patientId
+            ? [
+                { label: patient.full_name, to: `/patients/${patientId}` },
+                { label: 'Documentos' },
+              ]
+            : [{ label: 'Documentos' }]),
+        ]}
+      />
       <Typography variant="h4" component="h2" gutterBottom>
         Documentos
       </Typography>

@@ -22,6 +22,7 @@ import {
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
+import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
 import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
 import { useToast } from '../../../components/toast'
 import {
@@ -237,8 +238,26 @@ function PatientFormWizard({
 
   const err = save.error
 
+  const crumbPatient =
+    isEdit && patientId
+      ? [
+          {
+            label: fullName.trim() || 'Paciente',
+            to: `/patients/${patientId}`,
+          },
+          { label: 'Editar ficha' },
+        ]
+      : [{ label: 'Novo paciente' }]
+
   return (
     <Box>
+      <PageBreadcrumbs
+        items={[
+          { label: 'Painel', to: '/' },
+          { label: 'Pacientes', to: '/patients' },
+          ...crumbPatient,
+        ]}
+      />
       <Typography variant="h4" component="h2" gutterBottom>
         {isEdit ? 'Editar ficha de avaliação' : 'Nova ficha de avaliação'}
       </Typography>

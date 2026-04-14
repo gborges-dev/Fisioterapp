@@ -12,11 +12,14 @@ import {
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
+import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
 import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
+import { usePatient } from '../../patients/hooks/usePatients'
 import { useCreateEvolution, useEvolutionEntries } from '../hooks/useEvolution'
 
 export function EvolutionPage() {
   const { id: patientId } = useParams<{ id: string }>()
+  const { data: patient } = usePatient(patientId)
   const { data, isLoading, isError, error } = useEvolutionEntries(patientId)
   const create = useCreateEvolution(patientId ?? '')
   const [content, setContent] = useState('')
@@ -41,6 +44,18 @@ export function EvolutionPage() {
 
   return (
     <Box>
+      <PageBreadcrumbs
+        items={[
+          { label: 'Painel', to: '/' },
+          { label: 'Pacientes', to: '/patients' },
+          ...(patient && patientId
+            ? [
+                { label: patient.full_name, to: `/patients/${patientId}` },
+                { label: 'Evolução' },
+              ]
+            : [{ label: 'Evolução' }]),
+        ]}
+      />
       <Typography variant="h4" component="h2" gutterBottom>
         Evolução
       </Typography>

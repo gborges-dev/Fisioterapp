@@ -7,6 +7,7 @@ import { MemoryRouter } from 'react-router-dom'
 
 import { AppRoutes } from './app/AppRoutes'
 import { ToastProvider } from './components/toast'
+import { ColorModeProvider } from './theme/ColorModeProvider'
 import { appTheme } from './theme/appTheme'
 const qc = new QueryClient({
   defaultOptions: { queries: { retry: false } },
@@ -15,11 +16,13 @@ const qc = new QueryClient({
 function renderWithProviders(ui: ReactElement) {
   return render(
     <QueryClientProvider client={qc}>
-      <ThemeProvider theme={appTheme}>
-        <ToastProvider>
-          <MemoryRouter initialEntries={['/']}>{ui}</MemoryRouter>
-        </ToastProvider>
-      </ThemeProvider>
+      <ColorModeProvider>
+        <ThemeProvider theme={appTheme}>
+          <ToastProvider>
+            <MemoryRouter initialEntries={['/']}>{ui}</MemoryRouter>
+          </ToastProvider>
+        </ThemeProvider>
+      </ColorModeProvider>
     </QueryClientProvider>,
   )
 }

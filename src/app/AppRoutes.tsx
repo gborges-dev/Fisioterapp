@@ -11,6 +11,7 @@ import { PatientDetailPage } from '../features/patients/components/PatientDetail
 import { PatientFormPage } from '../features/patients/components/PatientFormPage'
 import { PatientListPage } from '../features/patients/components/PatientListPage'
 import { PublicFormPage } from '../features/public-form/components/PublicFormPage'
+import { ReportsPage } from '../features/reports/components/ReportsPage'
 
 export function AppRoutes() {
   return (
@@ -32,6 +33,7 @@ export function AppRoutes() {
           <Route path="new" element={<FormEditorPage />} />
           <Route path=":id/edit" element={<FormEditorPage />} />
         </Route>
+        <Route path="reports" element={<ReportsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

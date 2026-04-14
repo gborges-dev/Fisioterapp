@@ -46,6 +46,10 @@ export async function updateFormTemplate(
     .single()
 }
 
+export async function deleteFormTemplate(id: string) {
+  return supabase.from('form_templates').delete().eq('id', id)
+}
+
 export async function createFormLink(
   workspaceId: string,
   formTemplateId: string,

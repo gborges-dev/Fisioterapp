@@ -16,6 +16,7 @@ import {
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
+import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
 import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
 import { useToast } from '../../../components/toast'
 import type { FormFieldSchema, Json } from '../../../types/database.types'
@@ -127,8 +128,21 @@ function FormEditorFields({
   const pending = create.isPending || update.isPending
   const err = create.error ?? update.error
 
+  const crumbs = isNew
+    ? [
+        { label: 'Painel', to: '/' },
+        { label: 'Formulários', to: '/forms' },
+        { label: 'Novo formulário' },
+      ]
+    : [
+        { label: 'Painel', to: '/' },
+        { label: 'Formulários', to: '/forms' },
+        { label: title.trim() || 'Formulário' },
+      ]
+
   return (
     <Box>
+      <PageBreadcrumbs items={crumbs} />
       <Typography variant="h4" component="h2" gutterBottom>
         {isNew ? 'Novo formulário' : 'Editar formulário'}
       </Typography>

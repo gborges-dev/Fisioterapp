@@ -7,6 +7,7 @@ import type { FormFieldSchema } from '../../../types/database.types'
 import {
   createFormLink,
   createFormTemplate,
+  deleteFormTemplate,
   getFormTemplate,
   listFormTemplates,
   updateFormTemplate,
@@ -94,5 +95,16 @@ export function useFormTemplateMutations() {
     onSuccess: invalidate,
   })
 
-  return { create, update, createLink }
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await deleteFormTemplate(id)
+      if (error) throw error
+    },
+    onSuccess: (_void, id) => {
+      invalidate()
+      void qc.removeQueries({ queryKey: queryKeys.forms.template(id) })
+    },
+  })
+
+  return { create, update, createLink, remove }
 }

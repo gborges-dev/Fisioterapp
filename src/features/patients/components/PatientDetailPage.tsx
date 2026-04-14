@@ -11,6 +11,7 @@ import {
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
+import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
 import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
 import {
   usePatientHistory,
@@ -62,6 +63,15 @@ export function PatientDetailPage() {
 
   return (
     <Box>
+      <PageBreadcrumbs
+        items={[
+          { label: 'Painel', to: '/' },
+          { label: 'Pacientes', to: '/patients' },
+          ...(data
+            ? [{ label: data.full_name }]
+            : [{ label: 'Paciente' }]),
+        ]}
+      />
       <SupabaseConfigAlert />
       {loading ? <CircularProgress /> : null}
       {isError ? (

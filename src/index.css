@@ -1,36 +1,49 @@
-:root {
-  /* Alinhado ao tema MUI (saúde / fisioterapia) */
-  --text: #475569;
-  --text-h: #0f172a;
-  --bg: #f1f5f5;
-  --border: rgba(13, 148, 136, 0.15);
-  --code-bg: #ecfdf5;
-  --accent: #0d9488;
-  --accent-bg: rgba(13, 148, 136, 0.1);
-  --accent-border: rgba(13, 148, 136, 0.35);
-  --social-bg: rgba(241, 245, 245, 0.9);
-  --shadow:
-    rgba(15, 23, 42, 0.06) 0 1px 2px, rgba(13, 148, 136, 0.08) 0 4px 12px;
+/* Variáveis alinhadas à base #c5905f — modo em :root[data-theme] */
 
+:root[data-theme='light'],
+:root:not([data-theme]) {
+  --text: #5c534a;
+  --text-h: #1c1915;
+  --bg: #f6f3ef;
+  --border: rgba(197, 144, 95, 0.22);
+  --code-bg: rgba(197, 144, 95, 0.12);
+  --accent: #c5905f;
+  --accent-bg: rgba(197, 144, 95, 0.12);
+  --accent-border: rgba(197, 144, 95, 0.4);
+  --social-bg: rgba(246, 243, 239, 0.92);
+  --shadow:
+    rgba(28, 25, 21, 0.06) 0 1px 2px,
+    rgba(197, 144, 95, 0.1) 0 4px 12px;
+}
+
+:root[data-theme='dark'] {
+  --text: #b8aea3;
+  --text-h: #f2ebe3;
+  --bg: #141210;
+  --border: rgba(212, 168, 120, 0.25);
+  --code-bg: rgba(197, 144, 95, 0.15);
+  --accent: #d4a877;
+  --accent-bg: rgba(197, 144, 95, 0.18);
+  --accent-border: rgba(212, 168, 120, 0.45);
+  --social-bg: rgba(20, 18, 16, 0.92);
+  --shadow:
+    rgba(0, 0, 0, 0.35) 0 1px 3px,
+    rgba(197, 144, 95, 0.12) 0 4px 14px;
+}
+
+:root {
   --sans: 'Roboto', 'Segoe UI', system-ui, sans-serif;
   --heading: 'Roboto', 'Segoe UI', system-ui, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
   font: 16px/150% var(--sans);
   letter-spacing: 0.01px;
-  color-scheme: light;
   color: var(--text);
   background: var(--bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: light;
-  }
 }
 
 #root {
@@ -77,7 +90,7 @@ code,
 .counter {
   font-family: var(--mono);
   display: inline-flex;
-  border-radius: 8px;
+  border-radius: 6px;
   color: var(--text-h);
 }
 
