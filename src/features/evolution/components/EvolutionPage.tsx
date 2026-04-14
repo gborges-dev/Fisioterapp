@@ -5,6 +5,7 @@ import {
   Card,
   CardContent,
   CircularProgress,
+  Grid,
   Stack,
   TextField,
   Typography,
@@ -98,18 +99,20 @@ export function EvolutionPage() {
       {isError ? (
         <Alert severity="error">{(error as Error).message}</Alert>
       ) : null}
-      <Stack spacing={2}>
+      <Grid container spacing={2}>
         {data?.map((row) => (
-          <Card key={row.id} variant="outlined">
-            <CardContent>
-              <Typography variant="subtitle2" color="text.secondary">
-                {row.entry_date}
-              </Typography>
-              <Typography sx={{ whiteSpace: 'pre-wrap' }}>{row.content}</Typography>
-            </CardContent>
-          </Card>
+          <Grid key={row.id} size={{ xs: 12, md: 6 }}>
+            <Card variant="outlined" sx={{ borderRadius: 2, height: '100%' }}>
+              <CardContent>
+                <Typography variant="subtitle2" color="text.secondary">
+                  {row.entry_date}
+                </Typography>
+                <Typography sx={{ whiteSpace: 'pre-wrap', mt: 0.5 }}>{row.content}</Typography>
+              </CardContent>
+            </Card>
+          </Grid>
         ))}
-      </Stack>
+      </Grid>
       {data && data.length === 0 ? (
         <Typography color="text.secondary">Sem registos ainda.</Typography>
       ) : null}

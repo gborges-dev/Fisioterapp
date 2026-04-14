@@ -5,18 +5,12 @@ import {
   Box,
   Card,
   CardContent,
+  Chip,
   CircularProgress,
   Grid,
   InputAdornment,
-  Paper,
+  Stack,
   Tab,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TableSortLabel,
   Tabs,
   TextField,
   Typography,
@@ -25,6 +19,7 @@ import { BarChart } from '@mui/x-charts/BarChart'
 import { LineChart } from '@mui/x-charts/LineChart'
 import { useTheme } from '@mui/material/styles'
 import { useCallback, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 
 import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
 import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
@@ -182,6 +177,9 @@ export function ReportsPage() {
       <Tabs
         value={tab}
         onChange={(_, v) => setTab(v)}
+        variant="scrollable"
+        scrollButtons="auto"
+        allowScrollButtonsMobile
         sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}
       >
         <Tab label="Evolução por paciente" />
@@ -276,40 +274,28 @@ export function ReportsPage() {
                 </Card>
               ) : null}
 
-              <TableContainer component={Paper} variant="outlined">
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Data</TableCell>
-                      <TableCell>Conteúdo</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {(evoReport.data ?? []).length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={2}>
-                          <Typography color="text.secondary">
-                            Sem registos de evolução neste período.
-                          </Typography>
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      (evoReport.data ?? []).map((row) => (
-                        <TableRow key={row.id}>
-                          <TableCell sx={{ whiteSpace: 'nowrap' }}>
+              {(evoReport.data ?? []).length === 0 ? (
+                <Typography color="text.secondary">
+                  Sem registos de evolução neste período.
+                </Typography>
+              ) : (
+                <Grid container spacing={2}>
+                  {(evoReport.data ?? []).map((row) => (
+                    <Grid key={row.id} size={{ xs: 12, md: 6 }}>
+                      <Card variant="outlined" sx={{ borderRadius: 2, height: '100%' }}>
+                        <CardContent>
+                          <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
                             {row.entry_date as string}
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                              {(row.content as string) || '—'}
-                            </Typography>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                          </Typography>
+                          <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                            {(row.content as string) || '—'}
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+              )}
             </>
           )}
         </Box>
@@ -339,80 +325,81 @@ export function ReportsPage() {
             </Alert>
           ) : null}
           {overview.data ? (
-            <TableContainer component={Paper} variant="outlined">
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell sortDirection={orderBy === 'fullName' ? order : false}>
-                      <TableSortLabel
-                        active={orderBy === 'fullName'}
-                        direction={orderBy === 'fullName' ? order : 'asc'}
-                        onClick={() => handleRequestSort('fullName')}
-                      >
-                        Paciente
-                      </TableSortLabel>
-                    </TableCell>
-                    <TableCell
-                      sortDirection={orderBy === 'consultationReason' ? order : false}
-                      sx={{ display: { xs: 'none', md: 'table-cell' } }}
+            <Box>
+              <Stack direction="row" flexWrap="wrap" alignItems="center" gap={1} sx={{ mb: 2 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ width: { xs: '100%', sm: 'auto' } }}>
+                  Ordenar por
+                </Typography>
+                {(
+                  [
+                    { key: 'fullName' as const, label: 'Paciente' },
+                    { key: 'consultationReason' as const, label: 'Motivo' },
+                    { key: 'firstEvolutionDate' as const, label: '1.ª evolução' },
+                    { key: 'lastEvolutionDate' as const, label: 'Última' },
+                    { key: 'evolutionCount' as const, label: 'N.º' },
+                  ] as const
+                ).map(({ key, label }) => (
+                  <Chip
+                    key={key}
+                    size="small"
+                    label={`${label}${orderBy === key ? (order === 'asc' ? ' ↑' : ' ↓') : ''}`}
+                    onClick={() => handleRequestSort(key)}
+                    color={orderBy === key ? 'primary' : 'default'}
+                    variant={orderBy === key ? 'filled' : 'outlined'}
+                  />
+                ))}
+              </Stack>
+              <Grid container spacing={2}>
+                {overviewRows.map((row) => (
+                  <Grid key={row.patientId} size={{ xs: 12, sm: 6, lg: 4 }}>
+                    <Card
+                      variant="outlined"
+                      sx={{
+                        height: '100%',
+                        borderRadius: 2,
+                        transition: (t) =>
+                          t.transitions.create(['box-shadow', 'border-color'], {
+                            duration: t.transitions.duration.shorter,
+                          }),
+                        '&:hover': {
+                          borderColor: 'primary.light',
+                          boxShadow: (t) => t.shadows[2],
+                        },
+                      }}
                     >
-                      <TableSortLabel
-                        active={orderBy === 'consultationReason'}
-                        direction={orderBy === 'consultationReason' ? order : 'asc'}
-                        onClick={() => handleRequestSort('consultationReason')}
-                      >
-                        Motivo consulta
-                      </TableSortLabel>
-                    </TableCell>
-                    <TableCell sortDirection={orderBy === 'firstEvolutionDate' ? order : false}>
-                      <TableSortLabel
-                        active={orderBy === 'firstEvolutionDate'}
-                        direction={orderBy === 'firstEvolutionDate' ? order : 'asc'}
-                        onClick={() => handleRequestSort('firstEvolutionDate')}
-                      >
-                        1.ª evolução
-                      </TableSortLabel>
-                    </TableCell>
-                    <TableCell sortDirection={orderBy === 'lastEvolutionDate' ? order : false}>
-                      <TableSortLabel
-                        active={orderBy === 'lastEvolutionDate'}
-                        direction={orderBy === 'lastEvolutionDate' ? order : 'asc'}
-                        onClick={() => handleRequestSort('lastEvolutionDate')}
-                      >
-                        Última evolução
-                      </TableSortLabel>
-                    </TableCell>
-                    <TableCell
-                      align="right"
-                      sortDirection={orderBy === 'evolutionCount' ? order : false}
-                    >
-                      <TableSortLabel
-                        active={orderBy === 'evolutionCount'}
-                        direction={orderBy === 'evolutionCount' ? order : 'asc'}
-                        onClick={() => handleRequestSort('evolutionCount')}
-                      >
-                        N.º evoluções
-                      </TableSortLabel>
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {overviewRows.map((row) => (
-                    <TableRow key={row.patientId}>
-                      <TableCell>{row.fullName}</TableCell>
-                      <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, maxWidth: 200 }}>
-                        <Typography variant="body2" noWrap title={row.consultationReason ?? ''}>
-                          {row.consultationReason?.trim() || '—'}
+                      <CardContent>
+                        <Typography
+                          variant="subtitle1"
+                          component={Link}
+                          to={`/patients/${row.patientId}`}
+                          sx={{
+                            fontWeight: 600,
+                            color: 'text.primary',
+                            textDecoration: 'none',
+                            '&:hover': { color: 'primary.main' },
+                          }}
+                        >
+                          {row.fullName}
                         </Typography>
-                      </TableCell>
-                      <TableCell>{row.firstEvolutionDate ?? '—'}</TableCell>
-                      <TableCell>{row.lastEvolutionDate ?? '—'}</TableCell>
-                      <TableCell align="right">{row.evolutionCount}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                          Motivo: {row.consultationReason?.trim() || '—'}
+                        </Typography>
+                        <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mt: 1.5 }}>
+                          <Chip size="small" variant="outlined" label={`1.ª: ${row.firstEvolutionDate ?? '—'}`} />
+                          <Chip size="small" variant="outlined" label={`Última: ${row.lastEvolutionDate ?? '—'}`} />
+                          <Chip
+                            size="small"
+                            color="primary"
+                            variant="outlined"
+                            label={`${row.evolutionCount} evoluções`}
+                          />
+                        </Stack>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
           ) : null}
         </Box>
       ) : null}
@@ -617,53 +604,33 @@ export function ReportsPage() {
             <Alert severity="error">
               {(formSubmissionsReport.error as Error).message}
             </Alert>
+          ) : (formSubmissionsReport.data ?? []).length === 0 ? (
+            <Typography color="text.secondary">
+              Nenhuma resposta encontrada com estes critérios.
+            </Typography>
           ) : (
-            <TableContainer component={Paper} variant="outlined">
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Data e hora</TableCell>
-                    <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
-                      Paciente
-                    </TableCell>
-                    <TableCell>Respostas</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {(formSubmissionsReport.data ?? []).length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={3}>
-                        <Typography color="text.secondary">
-                          Nenhuma resposta encontrada com estes critérios.
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    (formSubmissionsReport.data ?? []).map((row) => (
-                      <TableRow key={row.id}>
-                        <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                          {new Date(row.created_at).toLocaleString('pt-PT', {
-                            dateStyle: 'short',
-                            timeStyle: 'short',
-                          })}
-                        </TableCell>
-                        <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
-                          {row.patientName ?? '—'}
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
-                            {formatSubmissionAnswersSummary(
-                              formTemplate.schema,
-                              row.answers,
-                            )}
-                          </Typography>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
+            <Grid container spacing={2}>
+              {(formSubmissionsReport.data ?? []).map((row) => (
+                <Grid key={row.id} size={{ xs: 12, md: 6 }}>
+                  <Card variant="outlined" sx={{ borderRadius: 2, height: '100%' }}>
+                    <CardContent>
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        {new Date(row.created_at).toLocaleString('pt-PT', {
+                          dateStyle: 'short',
+                          timeStyle: 'short',
+                        })}
+                      </Typography>
+                      <Typography variant="body2" fontWeight={600} sx={{ mt: 0.5 }}>
+                        {row.patientName ?? 'Sem paciente associado'}
+                      </Typography>
+                      <Typography variant="body2" sx={{ mt: 1, wordBreak: 'break-word' }}>
+                        {formatSubmissionAnswersSummary(formTemplate.schema, row.answers)}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
           )}
         </Box>
       ) : null}

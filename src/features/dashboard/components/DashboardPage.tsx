@@ -6,10 +6,7 @@ import {
   CardContent,
   CircularProgress,
   Grid,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
+  Stack,
   Typography,
 } from '@mui/material'
 import { LineChart } from '@mui/x-charts/LineChart'
@@ -205,26 +202,26 @@ export function DashboardPage() {
                     A carregar…
                   </Typography>
                 ) : (
-                  <List dense disablePadding>
+                  <Stack spacing={1.25}>
                     {insights.map((line, i) => (
-                      <ListItem key={i} disableGutters sx={{ py: 0.35 }}>
-                        <ListItemIcon sx={{ minWidth: 28 }}>
-                          <Typography
-                            component="span"
-                            variant="caption"
-                            color="primary"
-                            fontWeight={700}
-                          >
-                            {i + 1}.
-                          </Typography>
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={line}
-                          primaryTypographyProps={{ variant: 'body2' }}
-                        />
-                      </ListItem>
+                      <Card key={i} variant="outlined" sx={{ borderRadius: 2, bgcolor: 'action.hover' }}>
+                        <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
+                          <Box sx={{ display: 'flex', gap: 1.25, alignItems: 'flex-start' }}>
+                            <Typography
+                              component="span"
+                              variant="caption"
+                              color="primary"
+                              fontWeight={700}
+                              sx={{ mt: 0.15, flexShrink: 0 }}
+                            >
+                              {i + 1}.
+                            </Typography>
+                            <Typography variant="body2">{line}</Typography>
+                          </Box>
+                        </CardContent>
+                      </Card>
                     ))}
-                  </List>
+                  </Stack>
                 )}
               </CardContent>
             </Card>

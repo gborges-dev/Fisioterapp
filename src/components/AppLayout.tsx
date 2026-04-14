@@ -1,9 +1,14 @@
+import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined'
+import AssessmentOutlinedIcon from '@mui/icons-material/AssessmentOutlined'
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined'
+import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined'
 import HealingOutlinedIcon from '@mui/icons-material/HealingOutlined'
 import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined'
-import MenuIcon from '@mui/icons-material/Menu'
+import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline'
 import {
   AppBar,
+  BottomNavigation,
+  BottomNavigationAction,
   Box,
   Divider,
   Drawer,
@@ -11,6 +16,7 @@ import {
   List,
   ListItemButton,
   ListItemText,
+  Paper,
   Toolbar,
   Tooltip,
   Typography,
@@ -18,8 +24,8 @@ import {
   useTheme,
 } from '@mui/material'
 import { alpha } from '@mui/material/styles'
-import { useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { useMemo } from 'react'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 
 import { useColorMode } from '../theme/useColorMode'
 
@@ -32,11 +38,30 @@ const navItems = [
   { to: '/reports', label: 'Relatórios' },
 ] as const
 
+const bottomNavConfig = [
+  { to: '/', label: 'Painel', icon: <DashboardOutlinedIcon /> },
+  { to: '/patients', label: 'Pacientes', icon: <PeopleOutlineIcon /> },
+  { to: '/forms', label: 'Formulários', icon: <ArticleOutlinedIcon /> },
+  { to: '/reports', label: 'Relatórios', icon: <AssessmentOutlinedIcon /> },
+] as const
+
+function bottomNavValue(pathname: string): string {
+  if (pathname === '/' || pathname === '') return '/'
+  if (pathname.startsWith('/patients')) return '/patients'
+  if (pathname.startsWith('/forms')) return '/forms'
+  if (pathname.startsWith('/reports')) return '/reports'
+  return pathname
+}
+
 export function AppLayout() {
   const theme = useTheme()
   const { mode, toggleColorMode } = useColorMode()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
-  const [mobileOpen, setMobileOpen] = useState(false)
+  const location = useLocation()
+  const mobileNavValue = useMemo(
+    () => bottomNavValue(location.pathname),
+    [location.pathname],
+  )
 
   const drawer = (
     <Box sx={{ overflow: 'auto' }}>
@@ -71,9 +96,6 @@ export function AppLayout() {
             component={NavLink}
             to={item.to}
             end={item.to === '/'}
-            onClick={() => {
-              if (isMobile) setMobileOpen(false)
-            }}
             sx={{
               '&.active': { bgcolor: 'action.selected' },
             }}
@@ -85,24 +107,18 @@ export function AppLayout() {
     </Box>
   )
 
+  const mainBottomPad = isMobile
+    ? `calc(${theme.spacing(3)} + 56px + env(safe-area-inset-bottom, 0px))`
+    : undefined
+
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
       <AppBar
         position="fixed"
         sx={{ zIndex: (t) => t.zIndex.drawer + 1 }}
-        component="nav"
+        component="header"
       >
         <Toolbar>
-          {isMobile ? (
-            <IconButton
-              color="inherit"
-              edge="start"
-              onClick={() => setMobileOpen(true)}
-              aria-label="abrir menu"
-            >
-              <MenuIcon />
-            </IconButton>
-          ) : null}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexGrow: 1 }}>
             <HealingOutlinedIcon sx={{ color: 'primary.main', opacity: 0.9 }} aria-hidden />
             <Typography variant="h6" component="h1" sx={{ fontWeight: 600 }}>
@@ -125,27 +141,30 @@ export function AppLayout() {
           </Tooltip>
         </Toolbar>
       </AppBar>
-      <Drawer
-        variant={isMobile ? 'temporary' : 'permanent'}
-        open={isMobile ? mobileOpen : true}
-        onClose={() => setMobileOpen(false)}
-        ModalProps={{ keepMounted: true }}
-        sx={{
-          width: drawerWidth,
-          flexShrink: 0,
-          '& .MuiDrawer-paper': {
+
+      {!isMobile ? (
+        <Drawer
+          variant="permanent"
+          open
+          sx={{
             width: drawerWidth,
-            boxSizing: 'border-box',
-          },
-        }}
-      >
-        {drawer}
-      </Drawer>
+            flexShrink: 0,
+            '& .MuiDrawer-paper': {
+              width: drawerWidth,
+              boxSizing: 'border-box',
+            },
+          }}
+        >
+          {drawer}
+        </Drawer>
+      ) : null}
+
       <Box
         component="main"
         sx={{
           flexGrow: 1,
           p: { xs: 2, sm: 3 },
+          pb: mainBottomPad ?? { xs: 2, sm: 3 },
           width: { md: `calc(100% - ${drawerWidth}px)` },
           mt: { xs: 7, sm: 8 },
           background: (t) =>
@@ -155,6 +174,40 @@ export function AppLayout() {
       >
         <Outlet />
       </Box>
+
+      {isMobile ? (
+        <Paper
+          component="nav"
+          elevation={8}
+          square
+          sx={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            zIndex: (t) => t.zIndex.appBar,
+            borderTop: 1,
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
+            pb: 'env(safe-area-inset-bottom, 0px)',
+          }}
+          aria-label="Navegação principal"
+        >
+          <BottomNavigation value={mobileNavValue} showLabels>
+            {bottomNavConfig.map((item) => (
+              <BottomNavigationAction
+                key={item.to}
+                label={item.label}
+                icon={item.icon}
+                value={item.to}
+                component={NavLink}
+                to={item.to}
+                end={item.to === '/'}
+              />
+            ))}
+          </BottomNavigation>
+        </Paper>
+      ) : null}
     </Box>
   )
 }

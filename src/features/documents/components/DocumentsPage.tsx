@@ -5,18 +5,18 @@ import {
   Alert,
   Box,
   Button,
+  Card,
+  CardActions,
+  CardContent,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
+  Grid,
   IconButton,
   Link,
-  List,
-  ListItem,
-  ListItemSecondaryAction,
-  ListItemText,
   Stack,
   Tooltip,
   Typography,
@@ -141,35 +141,24 @@ export function DocumentsPage() {
         <Typography color="text.secondary">Nenhum documento.</Typography>
       ) : null}
       {data && data.length > 0 ? (
-        <List>
+        <Grid container spacing={2}>
           {data.map((doc) => (
-            <ListItem
-              key={doc.id}
-              sx={{
-                py: 1,
-                pr: { xs: 10, sm: 12 },
-                borderBottom: 1,
-                borderColor: 'divider',
-              }}
-            >
-              <ListItemText
-                primary={
-                  <Link
-                    href={getPublicUrl(doc.storage_path)}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {doc.file_name}
-                  </Link>
-                }
-                secondary={new Date(doc.created_at).toLocaleString()}
-              />
-              <ListItemSecondaryAction>
-                <Stack direction="row" spacing={0.5} alignItems="center">
+            <Grid key={doc.id} size={{ xs: 12, sm: 6 }}>
+              <Card variant="outlined" sx={{ borderRadius: 2, height: '100%' }}>
+                <CardContent>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, wordBreak: 'break-word' }}>
+                    <Link href={getPublicUrl(doc.storage_path)} target="_blank" rel="noreferrer">
+                      {doc.file_name}
+                    </Link>
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                    {new Date(doc.created_at).toLocaleString('pt-PT')}
+                  </Typography>
+                </CardContent>
+                <CardActions sx={{ justifyContent: 'flex-end', px: 2, pb: 2 }}>
                   <Tooltip title="Transferir">
                     <span>
                       <IconButton
-                        edge="end"
                         aria-label={`Transferir ${doc.file_name}`}
                         onClick={() => void handleDownload(doc)}
                         disabled={downloadingId === doc.id || remove.isPending}
@@ -185,7 +174,6 @@ export function DocumentsPage() {
                   <Tooltip title="Eliminar">
                     <span>
                       <IconButton
-                        edge="end"
                         aria-label={`Eliminar ${doc.file_name}`}
                         color="error"
                         onClick={() => setDocToDelete(doc)}
@@ -195,11 +183,11 @@ export function DocumentsPage() {
                       </IconButton>
                     </span>
                   </Tooltip>
-                </Stack>
-              </ListItemSecondaryAction>
-            </ListItem>
+                </CardActions>
+              </Card>
+            </Grid>
           ))}
-        </List>
+        </Grid>
       ) : null}
 
       <Dialog

@@ -7,7 +7,9 @@ import {
   Box,
   Button,
   Card,
+  CardActions,
   CardContent,
+  Chip,
   CircularProgress,
   Dialog,
   DialogActions,
@@ -16,15 +18,7 @@ import {
   Grid,
   IconButton,
   InputAdornment,
-  Link as MuiLink,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TableSortLabel,
+  Stack,
   TextField,
   Tooltip,
   Typography,
@@ -163,12 +157,12 @@ export function PatientListPage() {
 
       <SupabaseConfigAlert />
       <TextField
-        placeholder="Pesquisar em todas as colunas…"
+        placeholder="Pesquisar por nome, email ou telefone…"
         value={filter}
         onChange={(e) => setFilter(e.target.value)}
         size="small"
         fullWidth
-        sx={{ mb: 2, maxWidth: 480 }}
+        sx={{ mb: 2, maxWidth: { xs: 'none', sm: 480 } }}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
@@ -186,61 +180,76 @@ export function PatientListPage() {
         <Typography>Nenhum paciente registado.</Typography>
       ) : null}
       {data && data.length > 0 ? (
-        <TableContainer component={Paper} variant="outlined" sx={{ overflowX: 'auto' }}>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell sortDirection={orderBy === 'full_name' ? order : false}>
-                  <TableSortLabel
-                    active={orderBy === 'full_name'}
-                    direction={orderBy === 'full_name' ? order : 'asc'}
-                    onClick={() => handleRequestSort('full_name')}
-                  >
-                    Nome
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell
-                  sortDirection={orderBy === 'email' ? order : false}
-                  sx={{ display: { xs: 'none', sm: 'table-cell' } }}
+        <Box>
+          <Stack
+            direction="row"
+            flexWrap="wrap"
+            alignItems="center"
+            gap={1}
+            sx={{ mb: 2 }}
+          >
+            <Typography variant="body2" color="text.secondary" sx={{ width: { xs: '100%', sm: 'auto' } }}>
+              Ordenar por
+            </Typography>
+            {(
+              [
+                { key: 'full_name' as const, label: 'Nome' },
+                { key: 'email' as const, label: 'Email' },
+                { key: 'phone' as const, label: 'Telefone' },
+              ] as const
+            ).map(({ key, label }) => (
+              <Chip
+                key={key}
+                size="small"
+                label={`${label}${orderBy === key ? (order === 'asc' ? ' ↑' : ' ↓') : ''}`}
+                onClick={() => handleRequestSort(key)}
+                color={orderBy === key ? 'primary' : 'default'}
+                variant={orderBy === key ? 'filled' : 'outlined'}
+              />
+            ))}
+          </Stack>
+          <Grid container spacing={2}>
+            {filteredSorted.map((p) => (
+              <Grid key={p.id} size={{ xs: 12, sm: 6, lg: 4 }}>
+                <Card
+                  variant="outlined"
+                  sx={{
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    borderRadius: 2,
+                    transition: (t) =>
+                      t.transitions.create(['box-shadow', 'border-color'], {
+                        duration: t.transitions.duration.shorter,
+                      }),
+                    '&:hover': {
+                      borderColor: 'primary.light',
+                      boxShadow: (t) => t.shadows[2],
+                    },
+                  }}
                 >
-                  <TableSortLabel
-                    active={orderBy === 'email'}
-                    direction={orderBy === 'email' ? order : 'asc'}
-                    onClick={() => handleRequestSort('email')}
-                  >
-                    Email
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell
-                  sortDirection={orderBy === 'phone' ? order : false}
-                  sx={{ display: { xs: 'none', md: 'table-cell' } }}
-                >
-                  <TableSortLabel
-                    active={orderBy === 'phone'}
-                    direction={orderBy === 'phone' ? order : 'asc'}
-                    onClick={() => handleRequestSort('phone')}
-                  >
-                    Telefone
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell align="right">Ações</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredSorted.map((p) => (
-                <TableRow key={p.id}>
-                  <TableCell>
-                    <MuiLink component={Link} to={`/patients/${p.id}`} fontWeight={500}>
+                  <CardContent sx={{ flexGrow: 1, pt: 2 }}>
+                    <Typography
+                      variant="subtitle1"
+                      component={Link}
+                      to={`/patients/${p.id}`}
+                      sx={{
+                        fontWeight: 600,
+                        color: 'text.primary',
+                        textDecoration: 'none',
+                        '&:hover': { color: 'primary.main' },
+                      }}
+                    >
                       {p.full_name}
-                    </MuiLink>
-                  </TableCell>
-                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
-                    {p.email ?? '—'}
-                  </TableCell>
-                  <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
-                    {p.phone ?? '—'}
-                  </TableCell>
-                  <TableCell align="right">
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                      {p.email?.trim() || 'Sem email'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {p.phone?.trim() || 'Sem telefone'}
+                    </Typography>
+                  </CardContent>
+                  <CardActions sx={{ justifyContent: 'flex-end', px: 2, pb: 2, pt: 0 }}>
                     <Tooltip title="Editar ficha">
                       <IconButton
                         component={Link}
@@ -262,12 +271,12 @@ export function PatientListPage() {
                         <DeleteOutlineIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                  </CardActions>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
       ) : null}
 
       <Dialog open={Boolean(deleteId)} onClose={() => setDeleteId(null)}>

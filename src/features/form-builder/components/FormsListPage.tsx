@@ -9,9 +9,10 @@ import {
   Box,
   Button,
   Card,
-  CircularProgress,
+  CardActions,
   CardContent,
   Chip,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -22,14 +23,7 @@ import {
   List,
   ListItem,
   ListItemText,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TableSortLabel,
+  Stack,
   TextField,
   Tooltip,
   Typography,
@@ -227,12 +221,12 @@ export function FormsListPage() {
 
       <SupabaseConfigAlert />
       <TextField
-        placeholder="Pesquisar em todas as colunas…"
+        placeholder="Pesquisar por título ou data…"
         value={filter}
         onChange={(e) => setFilter(e.target.value)}
         size="small"
         fullWidth
-        sx={{ mb: 2, maxWidth: 480 }}
+        sx={{ mb: 2, maxWidth: { xs: 'none', sm: 480 } }}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
@@ -250,42 +244,62 @@ export function FormsListPage() {
         <Typography>Nenhum formulário.</Typography>
       ) : null}
       {data && data.length > 0 ? (
-        <TableContainer component={Paper} variant="outlined">
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell sortDirection={orderBy === 'title' ? order : false}>
-                  <TableSortLabel
-                    active={orderBy === 'title'}
-                    direction={orderBy === 'title' ? order : 'asc'}
-                    onClick={() => handleRequestSort('title')}
-                  >
-                    Título
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell
-                  sortDirection={orderBy === 'updated_at' ? order : false}
-                  sx={{ display: { xs: 'none', sm: 'table-cell' } }}
+        <Box>
+          <Stack
+            direction="row"
+            flexWrap="wrap"
+            alignItems="center"
+            gap={1}
+            sx={{ mb: 2 }}
+          >
+            <Typography variant="body2" color="text.secondary" sx={{ width: { xs: '100%', sm: 'auto' } }}>
+              Ordenar por
+            </Typography>
+            {(
+              [
+                { key: 'title' as const, label: 'Título' },
+                { key: 'updated_at' as const, label: 'Atualização' },
+              ] as const
+            ).map(({ key, label }) => (
+              <Chip
+                key={key}
+                size="small"
+                label={`${label}${orderBy === key ? (order === 'asc' ? ' ↑' : ' ↓') : ''}`}
+                onClick={() => handleRequestSort(key)}
+                color={orderBy === key ? 'primary' : 'default'}
+                variant={orderBy === key ? 'filled' : 'outlined'}
+              />
+            ))}
+          </Stack>
+          <Grid container spacing={2}>
+            {filteredSorted.map((row) => (
+              <Grid key={row.id} size={{ xs: 12, sm: 6, lg: 4 }}>
+                <Card
+                  variant="outlined"
+                  sx={{
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    borderRadius: 2,
+                    transition: (t) =>
+                      t.transitions.create(['box-shadow', 'border-color'], {
+                        duration: t.transitions.duration.shorter,
+                      }),
+                    '&:hover': {
+                      borderColor: 'primary.light',
+                      boxShadow: (t) => t.shadows[2],
+                    },
+                  }}
                 >
-                  <TableSortLabel
-                    active={orderBy === 'updated_at'}
-                    direction={orderBy === 'updated_at' ? order : 'asc'}
-                    onClick={() => handleRequestSort('updated_at')}
-                  >
-                    Última atualização
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell align="right">Ações</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredSorted.map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell>{row.title}</TableCell>
-                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
-                    {formatDate(row.updated_at)}
-                  </TableCell>
-                  <TableCell align="right">
+                  <CardContent sx={{ flexGrow: 1, pt: 2 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                      {row.title}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                      Atualizado em {formatDate(row.updated_at)}
+                    </Typography>
+                  </CardContent>
+                  <CardActions sx={{ justifyContent: 'flex-end', flexWrap: 'wrap', px: 2, pb: 2, pt: 0, gap: 0.5 }}>
                     <Tooltip title="Pré-visualizar perguntas">
                       <IconButton
                         size="small"
@@ -326,12 +340,12 @@ export function FormsListPage() {
                         <DeleteOutlineIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                  </CardActions>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
       ) : null}
 
       <Dialog
