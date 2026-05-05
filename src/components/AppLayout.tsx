@@ -107,9 +107,7 @@ export function AppLayout() {
     </Box>
   )
 
-  const mainBottomPad = isMobile
-    ? `calc(${theme.spacing(3)} + 56px + env(safe-area-inset-bottom, 0px))`
-    : undefined
+  const bottomNavHeight = 56
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
@@ -163,8 +161,14 @@ export function AppLayout() {
         component="main"
         sx={{
           flexGrow: 1,
-          p: { xs: 2, sm: 3 },
-          pb: mainBottomPad ?? { xs: 2, sm: 3 },
+          px: { xs: 2, sm: 3 },
+          pt: { xs: 2, sm: 3 },
+          pb: isMobile
+            ? {
+                xs: `calc(${theme.spacing(2)} + ${bottomNavHeight}px + env(safe-area-inset-bottom, 0px))`,
+                sm: `calc(${theme.spacing(3)} + ${bottomNavHeight}px + env(safe-area-inset-bottom, 0px))`,
+              }
+            : { xs: 2, sm: 3 },
           width: { md: `calc(100% - ${drawerWidth}px)` },
           mt: { xs: 7, sm: 8 },
           background: (t) =>
