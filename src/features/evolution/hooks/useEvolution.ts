@@ -24,13 +24,16 @@ export function useCreateEvolution(patientId: string) {
     mutationFn: async ({
       content,
       entryDate,
+      patientEvaluationFormId,
     }: {
       content: string
       entryDate: string
+      patientEvaluationFormId: string
     }) => {
       const { data, error } = await createEvolution({
         patient_id: patientId,
         workspace_id: DEFAULT_WORKSPACE_ID,
+        patient_evaluation_form_id: patientEvaluationFormId,
         content,
         entry_date: entryDate,
       })

@@ -1,5 +1,6 @@
 import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined'
 import AssessmentOutlinedIcon from '@mui/icons-material/AssessmentOutlined'
+import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined'
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined'
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined'
 import HealingOutlinedIcon from '@mui/icons-material/HealingOutlined'
@@ -34,6 +35,7 @@ const drawerWidth = 260
 const navItems = [
   { to: '/', label: 'Painel' },
   { to: '/patients', label: 'Pacientes' },
+  { to: '/evaluation-forms', label: 'Fichas de avaliação' },
   { to: '/forms', label: 'Formulários' },
   { to: '/reports', label: 'Relatórios' },
 ] as const
@@ -41,6 +43,7 @@ const navItems = [
 const bottomNavConfig = [
   { to: '/', label: 'Painel', icon: <DashboardOutlinedIcon /> },
   { to: '/patients', label: 'Pacientes', icon: <PeopleOutlineIcon /> },
+  { to: '/evaluation-forms', label: 'Fichas', icon: <AssignmentOutlinedIcon /> },
   { to: '/forms', label: 'Formulários', icon: <ArticleOutlinedIcon /> },
   { to: '/reports', label: 'Relatórios', icon: <AssessmentOutlinedIcon /> },
 ] as const
@@ -48,6 +51,7 @@ const bottomNavConfig = [
 function bottomNavValue(pathname: string): string {
   if (pathname === '/' || pathname === '') return '/'
   if (pathname.startsWith('/patients')) return '/patients'
+  if (pathname.startsWith('/evaluation-forms')) return '/evaluation-forms'
   if (pathname.startsWith('/forms')) return '/forms'
   if (pathname.startsWith('/reports')) return '/reports'
   return pathname

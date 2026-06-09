@@ -177,11 +177,79 @@ export interface Database {
           updated_at?: string
         }
       }
+      evaluation_form_templates: {
+        Row: {
+          id: string
+          workspace_id: string
+          title: string
+          description: string | null
+          schema: Json
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          title: string
+          description?: string | null
+          schema?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          title?: string
+          description?: string | null
+          schema?: Json
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      patient_evaluation_forms: {
+        Row: {
+          id: string
+          patient_id: string
+          workspace_id: string
+          template_id: string
+          title: string
+          schema: Json
+          answers: Json
+          evaluation_date: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          patient_id: string
+          workspace_id: string
+          template_id: string
+          title: string
+          schema?: Json
+          answers?: Json
+          evaluation_date?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          patient_id?: string
+          workspace_id?: string
+          template_id?: string
+          title?: string
+          schema?: Json
+          answers?: Json
+          evaluation_date?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
       evolution_entries: {
         Row: {
           id: string
           patient_id: string
           workspace_id: string
+          patient_evaluation_form_id: string
           content: string
           entry_date: string
           created_at: string
@@ -190,6 +258,7 @@ export interface Database {
           id?: string
           patient_id: string
           workspace_id: string
+          patient_evaluation_form_id: string
           content: string
           entry_date?: string
           created_at?: string
@@ -198,6 +267,7 @@ export interface Database {
           id?: string
           patient_id?: string
           workspace_id?: string
+          patient_evaluation_form_id?: string
           content?: string
           entry_date?: string
           created_at?: string

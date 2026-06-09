@@ -1,5 +1,6 @@
 import AddIcon from '@mui/icons-material/Add'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined'
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
 import SearchIcon from '@mui/icons-material/Search'
 import {
@@ -68,14 +69,6 @@ export function PatientListPage() {
     compare,
   })
 
-  const stats = useMemo(() => {
-    const list = data ?? []
-    const total = list.length
-    const withPhone = list.filter((p) => p.phone?.trim()).length
-    const withReason = list.filter((p) => p.consultation_reason?.trim()).length
-    return { total, withPhone, withReason }
-  }, [data])
-
   const patientToDelete = useMemo(
     () => (deleteId ? data?.find((p) => p.id === deleteId) : null),
     [deleteId, data],
@@ -121,39 +114,6 @@ export function PatientListPage() {
           Novo paciente
         </Button>
       </Box>
-
-      <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid size={{ xs: 12, sm: 4 }}>
-          <Card variant="outlined">
-            <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
-              <Typography color="text.secondary" variant="body2">
-                Total
-              </Typography>
-              <Typography variant="h5">{stats.total}</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid size={{ xs: 12, sm: 4 }}>
-          <Card variant="outlined">
-            <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
-              <Typography color="text.secondary" variant="body2">
-                Com telefone
-              </Typography>
-              <Typography variant="h5">{stats.withPhone}</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid size={{ xs: 12, sm: 4 }}>
-          <Card variant="outlined">
-            <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
-              <Typography color="text.secondary" variant="body2">
-                Com motivo de consulta
-              </Typography>
-              <Typography variant="h5">{stats.withReason}</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
 
       <SupabaseConfigAlert />
       <TextField
@@ -250,13 +210,24 @@ export function PatientListPage() {
                     </Typography>
                   </CardContent>
                   <CardActions sx={{ justifyContent: 'flex-end', px: 2, pb: 2, pt: 0 }}>
-                    <Tooltip title="Editar ficha">
+                    <Tooltip title="Fichas de avaliação">
+                      <IconButton
+                        component={Link}
+                        to={`/patients/${p.id}/evaluation-forms`}
+                        size="small"
+                        color="primary"
+                        aria-label="Fichas de avaliação"
+                      >
+                        <AssignmentOutlinedIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Editar paciente">
                       <IconButton
                         component={Link}
                         to={`/patients/${p.id}/edit`}
                         size="small"
                         color="primary"
-                        aria-label="Editar ficha"
+                        aria-label="Editar paciente"
                       >
                         <EditOutlinedIcon fontSize="small" />
                       </IconButton>

@@ -29,7 +29,7 @@ vi.mock('../hooks/usePatientFicha', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../hooks/usePatientFicha')>()
   return {
     ...actual,
-    useSavePatientFicha: () => ({
+    useSavePatient: () => ({
       mutateAsync: saveMutateAsync,
       isPending: false,
       error: null,
@@ -49,9 +49,8 @@ vi.mock('../utils/patientStepValidation', async (importOriginal) => {
   }
 })
 
-/** Limita queries ao `Box` que envolve o assistente (pai direto do título). */
 function formScope() {
-  const heading = screen.getByRole('heading', { name: 'Nova ficha de avaliação' })
+  const heading = screen.getByRole('heading', { name: 'Novo paciente' })
   const root = heading.parentElement
   if (!root) throw new Error('contentor do formulário não encontrado')
   return within(root)
@@ -84,64 +83,42 @@ describe('PatientFormPage', () => {
     saveMutateAsync.mockResolvedValue({ patientId: 'new-patient-id' })
   })
 
-  it('mostra o título da nova ficha', () => {
+  it('mostra o título do novo paciente', () => {
     renderNewPatientForm()
-    expect(
-      screen.getByRole('heading', { name: 'Nova ficha de avaliação' }),
-    ).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Novo paciente' })).toBeInTheDocument()
   })
 
-  it('bloqueia avanço com data de nascimento inválida e mostra aviso', async () => {
-    /* O input date no jsdom não propaga strings inválidas ao estado; forçamos o mesmo ramo que `isOptionalBirthDateValid` usa com dados reais inválidos. */
+  it('bloqueia submissão com data de nascimento inválida e mostra aviso', async () => {
     stepValidationOverrides.forceInvalidBirth = true
     const user = userEvent.setup()
     renderNewPatientForm()
     const scope = formScope()
 
-    await user.click(scope.getByRole('button', { name: 'Seguinte' }))
+    await user.type(scope.getByRole('textbox', { name: /nome completo/i }), 'Ana Costa')
+    await user.click(scope.getByRole('button', { name: 'Guardar paciente' }))
 
     expect(
       await screen.findByText('Data de nascimento inválida.'),
     ).toBeInTheDocument()
+    expect(saveMutateAsync).not.toHaveBeenCalled()
   })
 
-  it('habilita "Tempo que parou" apenas para ex-fumante', async () => {
-    const user = userEvent.setup()
+  it('mantém "Guardar paciente" desativado sem nome', async () => {
     renderNewPatientForm()
     const scope = formScope()
 
-    await user.click(scope.getByRole('button', { name: 'Seguinte' }))
-    await user.click(scope.getByRole('radio', { name: /nunca fumou/i }))
-    const quitField = scope.getByRole('textbox', { name: /tempo que parou/i })
-    expect(quitField).toBeDisabled()
-
-    await user.click(scope.getByRole('radio', { name: /ex-fumante/i }))
-    expect(quitField).not.toBeDisabled()
-  })
-
-  it('mantém "Guardar ficha" desativado sem nome no último passo', async () => {
-    const user = userEvent.setup()
-    renderNewPatientForm()
-    const scope = formScope()
-
-    await user.click(scope.getByRole('button', { name: 'Seguinte' }))
-    await user.click(scope.getByRole('button', { name: 'Seguinte' }))
-
-    const saveBtn = scope.getByRole('button', { name: 'Guardar ficha' })
+    const saveBtn = scope.getByRole('button', { name: 'Guardar paciente' })
     expect(saveBtn).toBeDisabled()
     expect(saveMutateAsync).not.toHaveBeenCalled()
   })
 
-  it('submete após preencher o nome no último passo', async () => {
+  it('submete após preencher o nome', async () => {
     const user = userEvent.setup()
     renderNewPatientForm()
     const scope = formScope()
 
     await user.type(scope.getByRole('textbox', { name: /nome completo/i }), 'Ana Costa')
-    await user.click(scope.getByRole('button', { name: 'Seguinte' }))
-    await user.click(scope.getByRole('button', { name: 'Seguinte' }))
-
-    await user.click(scope.getByRole('button', { name: 'Guardar ficha' }))
+    await user.click(scope.getByRole('button', { name: 'Guardar paciente' }))
 
     expect(saveMutateAsync).toHaveBeenCalledTimes(1)
     expect(navigateMock).toHaveBeenCalledWith('/patients/new-patient-id')

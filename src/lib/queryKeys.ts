@@ -27,6 +27,15 @@ export const queryKeys = {
     links: (templateId: string) =>
       [workspaceId, 'form-links', templateId] as const,
   },
+  evaluationForms: {
+    templates: [workspaceId, 'evaluation-form-templates'] as const,
+    template: (id: string) =>
+      [workspaceId, 'evaluation-form-templates', id] as const,
+    byPatient: (patientId: string) =>
+      [workspaceId, 'patient-evaluation-forms', patientId] as const,
+    detail: (patientId: string, formId: string) =>
+      [workspaceId, 'patient-evaluation-forms', patientId, formId] as const,
+  },
   publicForm: (token: string) => ['public-form', token] as const,
   reports: {
     patientEvolution: (patientId: string, from: string, to: string) =>

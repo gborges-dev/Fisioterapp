@@ -8,27 +8,9 @@ import {
   updatePatient,
   type PatientUpdate,
 } from '../services/patientsApi'
-import {
-  getPatientHistory,
-  upsertPatientHistory,
-  type PatientHistoryInsert,
-} from '../services/patientHistoryApi'
-import {
-  getPatientSurgery,
-  upsertPatientSurgery,
-  type PatientSurgeryInsert,
-} from '../services/patientSurgeryApi'
+import { getPatientHistory } from '../services/patientHistoryApi'
+import { getPatientSurgery } from '../services/patientSurgeryApi'
 import type { NewPatientInput } from './usePatients'
-
-export type PatientFichaHistoryInput = Omit<
-  PatientHistoryInsert,
-  'patient_id' | 'workspace_id'
->
-
-export type PatientFichaSurgeryInput = Omit<
-  PatientSurgeryInsert,
-  'patient_id' | 'workspace_id'
->
 
 export function usePatientHistory(patientId: string | undefined) {
   return useQuery({
@@ -57,77 +39,32 @@ export function usePatientSurgeryQuery(patientId: string | undefined) {
 function invalidatePatientRelated(qc: ReturnType<typeof useQueryClient>, id: string) {
   void qc.invalidateQueries({ queryKey: queryKeys.patients.all })
   void qc.invalidateQueries({ queryKey: queryKeys.patients.detail(id) })
-  void qc.invalidateQueries({ queryKey: queryKeys.patients.history(id) })
-  void qc.invalidateQueries({ queryKey: queryKeys.patients.surgery(id) })
   void qc.invalidateQueries({
     queryKey: queryKeys.dashboard.evolutionOverview,
   })
 }
 
-export function useSavePatientFicha() {
+export function useSavePatient() {
   const qc = useQueryClient()
 
   return useMutation({
     mutationFn: async (
       input:
-        | {
-            mode: 'create'
-            patient: NewPatientInput
-            history: PatientFichaHistoryInput
-            surgery: PatientFichaSurgeryInput
-          }
-        | {
-            mode: 'update'
-            patientId: string
-            patient: PatientUpdate
-            history: PatientFichaHistoryInput
-            surgery: PatientFichaSurgeryInput
-          },
+        | { mode: 'create'; patient: NewPatientInput }
+        | { mode: 'update'; patientId: string; patient: PatientUpdate },
     ) => {
-      const ws = DEFAULT_WORKSPACE_ID
-
       if (input.mode === 'create') {
         const { data: p, error } = await createPatient({
           ...input.patient,
-          workspace_id: ws,
+          workspace_id: DEFAULT_WORKSPACE_ID,
         })
         if (error) throw error
         if (!p) throw new Error('Paciente não criado')
-
-        const { error: eh } = await upsertPatientHistory({
-          patient_id: p.id,
-          workspace_id: ws,
-          ...input.history,
-        })
-        if (eh) throw eh
-
-        const { error: es } = await upsertPatientSurgery({
-          patient_id: p.id,
-          workspace_id: ws,
-          ...input.surgery,
-        })
-        if (es) throw es
-
         return { patientId: p.id }
       }
 
       const { error: eu } = await updatePatient(input.patientId, input.patient)
       if (eu) throw eu
-
-      const { error: eh } = await upsertPatientHistory({
-        patient_id: input.patientId,
-        workspace_id: ws,
-        ...input.history,
-      })
-      if (eh) throw eh
-
-      const { error: es } = await upsertPatientSurgery({
-        patient_id: input.patientId,
-        workspace_id: ws,
-        ...input.surgery,
-      })
-      if (es) throw es
-
       return { patientId: input.patientId }
     },
     onSuccess: (data) => {
@@ -135,3 +72,6 @@ export function useSavePatientFicha() {
     },
   })
 }
+
+/** @deprecated Use useSavePatient */
+export const useSavePatientFicha = useSavePatient

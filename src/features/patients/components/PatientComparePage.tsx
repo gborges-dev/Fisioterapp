@@ -13,23 +13,35 @@ import { Link, useParams } from 'react-router-dom'
 
 import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
 import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
-import { useEvolutionEntries } from '../../evolution/hooks/useEvolution'
+import { usePatientEvaluationForms } from '../../evaluation-forms/hooks/usePatientEvaluationForms'
 import {
-  usePatientHistory,
-  usePatientSurgeryQuery,
-} from '../hooks/usePatientFicha'
+  parseAnswers,
+  parseEvaluationSchema,
+} from '../../evaluation-forms/services/evaluationFormsApi'
+import { useEvolutionEntries } from '../../evolution/hooks/useEvolution'
 import { usePatient } from '../hooks/usePatients'
+
+function formatDate(iso: string) {
+  try {
+    return new Date(iso + 'T12:00:00').toLocaleDateString('pt-PT', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    })
+  } catch {
+    return iso
+  }
+}
 
 export function PatientComparePage() {
   const { id } = useParams<{ id: string }>()
   const { data: patient, isLoading: lp, isError: ep, error: errP } =
     usePatient(id)
-  const { data: hist } = usePatientHistory(id)
-  const { data: surg } = usePatientSurgeryQuery(id)
+  const { data: forms, isLoading: lf } = usePatientEvaluationForms(id)
   const { data: evo, isLoading: le, isError: ee, error: errE } =
     useEvolutionEntries(id)
 
-  const loading = lp || le
+  const loading = lp || le || lf
 
   if (!id) {
     return <Alert severity="error">Paciente inválido.</Alert>
@@ -64,83 +76,110 @@ export function PatientComparePage() {
         <Alert severity="error">{(errE as Error).message}</Alert>
       ) : null}
       {patient ? (
-        <Stack
-          direction={{ xs: 'column', md: 'row' }}
-          spacing={3}
-          alignItems="stretch"
-        >
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography variant="h6" gutterBottom>
-              Contexto da ficha (baseline)
-            </Typography>
-            <Card variant="outlined" sx={{ mb: 2 }}>
-              <CardContent>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Motivo da consulta
-                </Typography>
-                <Typography sx={{ whiteSpace: 'pre-wrap', mb: 2 }}>
-                  {patient.consultation_reason?.trim() || '—'}
-                </Typography>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Resumo
-                </Typography>
-                <Typography variant="body2">
-                  {patient.birth_date
-                    ? `Nasc.: ${patient.birth_date.slice(0, 10)}`
-                    : null}
-                </Typography>
-                {hist?.comorbidity ? (
-                  <Typography variant="body2" sx={{ mt: 1 }}>
-                    Comorbidades: {hist.comorbidity}
-                  </Typography>
-                ) : null}
-                {surg?.surgery_type ? (
-                  <Typography variant="body2" sx={{ mt: 1 }}>
-                    Cirurgia: {surg.surgery_type}
-                  </Typography>
-                ) : null}
-              </CardContent>
-            </Card>
-          </Box>
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography variant="h6" gutterBottom>
-              Evolução no tempo
-            </Typography>
-            {!evo?.length ? (
-              <Typography color="text.secondary">
-                Ainda não há registos de evolução.
-              </Typography>
-            ) : (
-              <Stack spacing={2}>
-                {evo.map((row, index) => {
-                  const isLatest = index === 0
-                  return (
-                    <Card
-                      key={row.id}
-                      variant="outlined"
-                      sx={{
-                        borderColor: isLatest ? 'primary.main' : undefined,
-                      }}
-                    >
+        <Stack spacing={3}>
+          {!forms?.length ? (
+            <Alert severity="info">
+              Este paciente ainda não tem fichas de avaliação.{' '}
+              <Link to={`/patients/${id}/evaluation-forms/new`}>
+                Adicionar ficha
+              </Link>
+            </Alert>
+          ) : (
+            forms.map((form) => {
+              const fields = parseEvaluationSchema(form.schema)
+              const answers = parseAnswers(form.answers)
+              const linkedEvolution =
+                evo?.filter(
+                  (row) => row.patient_evaluation_form_id === form.id,
+                ) ?? []
+
+              return (
+                <Stack
+                  key={form.id}
+                  direction={{ xs: 'column', md: 'row' }}
+                  spacing={3}
+                  alignItems="stretch"
+                >
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="h6" gutterBottom>
+                      {form.title}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      Avaliação em {formatDate(form.evaluation_date)}
+                    </Typography>
+                    <Card variant="outlined" sx={{ mb: 2 }}>
                       <CardContent>
-                        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-                          <Typography variant="subtitle1">
-                            {row.entry_date}
+                        {fields.length === 0 ? (
+                          <Typography color="text.secondary">
+                            Ficha sem campos preenchidos.
                           </Typography>
-                          {isLatest ? (
-                            <Chip size="small" color="primary" label="Mais recente" />
-                          ) : null}
-                        </Stack>
-                        <Typography sx={{ whiteSpace: 'pre-wrap' }}>
-                          {row.content}
-                        </Typography>
+                        ) : (
+                          fields.map((field) => (
+                            <Box key={field.id} sx={{ mb: 1.5 }}>
+                              <Typography variant="subtitle2" color="text.secondary">
+                                {field.label}
+                              </Typography>
+                              <Typography sx={{ whiteSpace: 'pre-wrap' }}>
+                                {answers[field.label]?.trim() || '—'}
+                              </Typography>
+                            </Box>
+                          ))
+                        )}
                       </CardContent>
                     </Card>
-                  )
-                })}
-              </Stack>
-            )}
-          </Box>
+                  </Box>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="h6" gutterBottom>
+                      Evolução vinculada
+                    </Typography>
+                    {!linkedEvolution.length ? (
+                      <Typography color="text.secondary">
+                        Sem registos de evolução para esta ficha.
+                      </Typography>
+                    ) : (
+                      <Stack spacing={2}>
+                        {linkedEvolution.map((row, index) => {
+                          const isLatest = index === 0
+                          return (
+                            <Card
+                              key={row.id}
+                              variant="outlined"
+                              sx={{
+                                borderColor: isLatest ? 'primary.main' : undefined,
+                              }}
+                            >
+                              <CardContent>
+                                <Stack
+                                  direction="row"
+                                  spacing={1}
+                                  alignItems="center"
+                                  sx={{ mb: 1 }}
+                                >
+                                  <Typography variant="subtitle1">
+                                    {row.entry_date}
+                                  </Typography>
+                                  {isLatest ? (
+                                    <Chip
+                                      size="small"
+                                      color="primary"
+                                      label="Mais recente"
+                                    />
+                                  ) : null}
+                                </Stack>
+                                <Typography sx={{ whiteSpace: 'pre-wrap' }}>
+                                  {row.content}
+                                </Typography>
+                              </CardContent>
+                            </Card>
+                          )
+                        })}
+                      </Stack>
+                    )}
+                  </Box>
+                </Stack>
+              )
+            })
+          )}
         </Stack>
       ) : null}
     </Box>
