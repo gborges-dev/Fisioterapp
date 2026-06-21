@@ -13,6 +13,7 @@ import { Link, useParams } from 'react-router-dom'
 import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
 import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
 import { useToast } from '../../../components/toast'
+import { validateRequiredFields } from '../../../lib/formFieldValidation'
 import type { FormFieldSchema } from '../../../types/database.types'
 import { usePatient } from '../../patients/hooks/usePatients'
 import { EvaluationFormFieldsRenderer } from './EvaluationFormFieldsRenderer'
@@ -105,11 +106,10 @@ function PatientEvaluationFormEditor({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    for (const f of fields) {
-      if (f.required && !answers[f.id]?.trim()) {
-        showError(new Error(`O campo "${f.label}" é obrigatório.`))
-        return
-      }
+    const validationError = validateRequiredFields(fields, answers)
+    if (validationError) {
+      showError(new Error(validationError))
+      return
     }
 
     try {
@@ -158,7 +158,7 @@ function PatientEvaluationFormEditor({
         component="form"
         onSubmit={(e) => void handleSubmit(e)}
         noValidate
-        sx={{ maxWidth: 640 }}
+        sx={{ maxWidth: { xs: '100%', sm: 640 } }}
       >
         <Stack spacing={2}>
           <TextField

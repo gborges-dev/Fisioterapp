@@ -5,15 +5,7 @@ import {
   Alert,
   Box,
   Button,
-  Card,
-  CardActions,
-  CardContent,
   CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
   Grid,
   IconButton,
   Link,
@@ -24,6 +16,9 @@ import {
 import { useRef, useState } from 'react'
 import { Link as RouterLink, useParams } from 'react-router-dom'
 
+import { ConfirmDeleteDialog } from '../../../components/ConfirmDeleteDialog'
+import { ListCard } from '../../../components/ListCard'
+import { ListPageSkeleton } from '../../../components/ListPageSkeleton'
 import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
 import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
 import { usePatient } from '../../patients/hooks/usePatients'
@@ -133,7 +128,7 @@ export function DocumentsPage() {
           {(upload.error as Error).message}
         </Alert>
       ) : null}
-      {isLoading ? <CircularProgress /> : null}
+      {isLoading ? <ListPageSkeleton count={4} /> : null}
       {isError ? (
         <Alert severity="error">{(error as Error).message}</Alert>
       ) : null}
@@ -143,77 +138,67 @@ export function DocumentsPage() {
       {data && data.length > 0 ? (
         <Grid container spacing={2}>
           {data.map((doc) => (
-            <Grid key={doc.id} size={{ xs: 12, sm: 6 }}>
-              <Card variant="outlined" sx={{ borderRadius: 2, height: '100%' }}>
-                <CardContent>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 600, wordBreak: 'break-word' }}>
-                    <Link href={getPublicUrl(doc.storage_path)} target="_blank" rel="noreferrer">
-                      {doc.file_name}
-                    </Link>
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                    {new Date(doc.created_at).toLocaleString('pt-PT')}
-                  </Typography>
-                </CardContent>
-                <CardActions sx={{ justifyContent: 'flex-end', px: 2, pb: 2 }}>
-                  <Tooltip title="Transferir">
-                    <span>
-                      <IconButton
-                        aria-label={`Transferir ${doc.file_name}`}
-                        onClick={() => void handleDownload(doc)}
-                        disabled={downloadingId === doc.id || remove.isPending}
-                      >
-                        {downloadingId === doc.id ? (
-                          <CircularProgress size={22} />
-                        ) : (
-                          <DownloadIcon />
-                        )}
-                      </IconButton>
-                    </span>
-                  </Tooltip>
-                  <Tooltip title="Eliminar">
-                    <span>
-                      <IconButton
-                        aria-label={`Eliminar ${doc.file_name}`}
-                        color="error"
-                        onClick={() => setDocToDelete(doc)}
-                        disabled={remove.isPending || downloadingId === doc.id}
-                      >
-                        <DeleteOutlineIcon />
-                      </IconButton>
-                    </span>
-                  </Tooltip>
-                </CardActions>
-              </Card>
+            <Grid key={doc.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+              <ListCard
+                actions={
+                  <>
+                    <Tooltip title="Transferir">
+                      <span>
+                        <IconButton
+                          aria-label={`Transferir ${doc.file_name}`}
+                          onClick={() => void handleDownload(doc)}
+                          disabled={downloadingId === doc.id || remove.isPending}
+                        >
+                          {downloadingId === doc.id ? (
+                            <CircularProgress size={22} />
+                          ) : (
+                            <DownloadIcon />
+                          )}
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                    <Tooltip title="Eliminar">
+                      <span>
+                        <IconButton
+                          aria-label={`Eliminar ${doc.file_name}`}
+                          color="error"
+                          onClick={() => setDocToDelete(doc)}
+                          disabled={remove.isPending || downloadingId === doc.id}
+                        >
+                          <DeleteOutlineIcon />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                  </>
+                }
+              >
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, wordBreak: 'break-word' }}>
+                  <Link href={getPublicUrl(doc.storage_path)} target="_blank" rel="noreferrer">
+                    {doc.file_name}
+                  </Link>
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                  {new Date(doc.created_at).toLocaleString('pt-PT')}
+                </Typography>
+              </ListCard>
             </Grid>
           ))}
         </Grid>
       ) : null}
 
-      <Dialog
+      <ConfirmDeleteDialog
         open={Boolean(docToDelete)}
-        onClose={() => setDocToDelete(null)}
-        aria-labelledby="delete-doc-title"
-      >
-        <DialogTitle id="delete-doc-title">Eliminar anexo</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
+        title="Eliminar anexo"
+        message={
+          <>
             Tem a certeza que pretende eliminar &quot;{docToDelete?.file_name}
             &quot;? Esta ação não pode ser anulada.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDocToDelete(null)}>Cancelar</Button>
-          <Button
-            color="error"
-            variant="contained"
-            onClick={() => void confirmDelete()}
-            disabled={remove.isPending}
-          >
-            Eliminar
-          </Button>
-        </DialogActions>
-      </Dialog>
+          </>
+        }
+        loading={remove.isPending}
+        onCancel={() => setDocToDelete(null)}
+        onConfirm={() => void confirmDelete()}
+      />
     </Box>
   )
 }

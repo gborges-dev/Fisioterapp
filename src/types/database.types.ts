@@ -6,7 +6,13 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-export type FormFieldType = 'text' | 'textarea' | 'number' | 'date' | 'select'
+export type FormFieldType =
+  | 'text'
+  | 'textarea'
+  | 'number'
+  | 'date'
+  | 'select'
+  | 'multiselect'
 
 export interface FormFieldSchema {
   id: string

@@ -22,6 +22,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
+import { RichTextContent } from '../../../components/RichTextContent'
 import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
 import { useSortState, useTableFilterSort } from '../../../hooks/useTableFilterSort'
 import { useDashboardEvolutionOverview } from '../../dashboard/hooks/useDashboardEvolutionOverview'
@@ -287,9 +288,10 @@ export function ReportsPage() {
                           <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
                             {row.entry_date as string}
                           </Typography>
-                          <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                            {(row.content as string) || '—'}
-                          </Typography>
+                          <RichTextContent
+                            content={(row.content as string) || ''}
+                            variant="body2"
+                          />
                         </CardContent>
                       </Card>
                     </Grid>

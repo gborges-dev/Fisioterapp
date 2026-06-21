@@ -2,7 +2,12 @@ import {
   Alert,
   Box,
   Button,
+  Checkbox,
   CircularProgress,
+  FormControl,
+  FormControlLabel,
+  FormGroup,
+  FormLabel,
   MenuItem,
   Stack,
   TextField,
@@ -14,6 +19,11 @@ import { useParams } from 'react-router-dom'
 
 import { toastError, toastSuccess } from '../../../components/toast'
 import { queryKeys } from '../../../lib/queryKeys'
+import {
+  parseMultiselectAnswer,
+  serializeMultiselectAnswer,
+} from '../../../lib/formAnswers'
+import { validateRequiredFields } from '../../../lib/formFieldValidation'
 import { isSupabaseConfigured } from '../../../lib/supabaseClient'
 import type { FormFieldSchema, Json } from '../../../types/database.types'
 import {
@@ -58,8 +68,10 @@ export function PublicFormPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!token) return
-    for (const f of fields) {
-      if (f.required && !answers[f.id]?.trim()) return
+    const validationError = validateRequiredFields(fields, answers)
+    if (validationError) {
+      toastError(new Error(validationError))
+      return
     }
     const obj: Record<string, string> = {}
     for (const f of fields) {
@@ -209,6 +221,33 @@ function FieldInput({
         fullWidth
         slotProps={{ inputLabel: { shrink: true } }}
       />
+    )
+  }
+  if (field.type === 'multiselect' && field.options?.length) {
+    const selected = parseMultiselectAnswer(value)
+    return (
+      <FormControl required={field.required} fullWidth>
+        <FormLabel>{field.label}</FormLabel>
+        <FormGroup>
+          {field.options.map((opt) => (
+            <FormControlLabel
+              key={opt}
+              control={
+                <Checkbox
+                  checked={selected.includes(opt)}
+                  onChange={(e) => {
+                    const next = e.target.checked
+                      ? [...selected, opt]
+                      : selected.filter((s) => s !== opt)
+                    onChange(serializeMultiselectAnswer(next))
+                  }}
+                />
+              }
+              label={opt}
+            />
+          ))}
+        </FormGroup>
+      </FormControl>
     )
   }
   if (field.type === 'select' && field.options?.length) {

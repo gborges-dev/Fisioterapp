@@ -12,6 +12,7 @@ import {
 import { Link, useParams } from 'react-router-dom'
 
 import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
+import { RichTextContent } from '../../../components/RichTextContent'
 import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
 import { usePatientEvaluationForms } from '../../evaluation-forms/hooks/usePatientEvaluationForms'
 import {
@@ -166,9 +167,7 @@ export function PatientComparePage() {
                                     />
                                   ) : null}
                                 </Stack>
-                                <Typography sx={{ whiteSpace: 'pre-wrap' }}>
-                                  {row.content}
-                                </Typography>
+                                <RichTextContent content={row.content} variant="body2" />
                               </CardContent>
                             </Card>
                           )

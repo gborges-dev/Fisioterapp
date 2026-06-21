@@ -19,6 +19,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
 import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
 import { useToast } from '../../../components/toast'
+import { isOptionFieldType, validateOptionFields } from '../../../lib/formFieldValidation'
 import type { FormFieldSchema } from '../../../types/database.types'
 import {
   useEvaluationFormTemplate,
@@ -101,6 +102,13 @@ function TemplateEditorFields({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!title.trim()) return
+
+    const optionError = validateOptionFields(fields)
+    if (optionError) {
+      showError(new Error(optionError))
+      return
+    }
+
     try {
       if (isNew) {
         const row = await create.mutateAsync({
@@ -152,7 +160,7 @@ function TemplateEditorFields({
         </Alert>
       ) : null}
       <Box component="form" onSubmit={handleSubmit}>
-        <Stack spacing={3} sx={{ maxWidth: 720 }}>
+        <Stack spacing={3} sx={{ maxWidth: { xs: '100%', sm: 720 }, px: { xs: 0, sm: 0 } }}>
           <TextField
             label="Título do modelo"
             value={title}
@@ -209,6 +217,7 @@ function TemplateEditorFields({
                   <MenuItem value="number">Número</MenuItem>
                   <MenuItem value="date">Data</MenuItem>
                   <MenuItem value="select">Escolha</MenuItem>
+                  <MenuItem value="multiselect">Múltipla escolha</MenuItem>
                 </Select>
               </FormControl>
               <TextField
@@ -222,7 +231,7 @@ function TemplateEditorFields({
                       .filter(Boolean),
                   })
                 }
-                disabled={field.type !== 'select'}
+                disabled={!isOptionFieldType(field.type)}
                 fullWidth
                 sx={{ flex: 1 }}
               />

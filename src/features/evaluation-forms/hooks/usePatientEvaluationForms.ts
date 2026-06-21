@@ -1,15 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
+import { toastError, toastSuccess } from '../../../components/toast'
 import { queryKeys } from '../../../lib/queryKeys'
 import { DEFAULT_WORKSPACE_ID } from '../../../lib/workspace'
 import { isSupabaseConfigured } from '../../../lib/supabaseClient'
 import type { FormFieldSchema, Json } from '../../../types/database.types'
+import { deleteEvolutionEntriesByFormId } from '../../evolution/services/evolutionApi'
 import {
   createPatientEvaluationForm,
+  deletePatientEvaluationForm,
   getPatientEvaluationForm,
   listPatientEvaluationForms,
   updatePatientEvaluationForm,
 } from '../services/evaluationFormsApi'
+
+const LIST_STALE_MS = 30_000
 
 export function usePatientEvaluationForms(patientId: string | undefined) {
   return useQuery({
@@ -20,6 +25,7 @@ export function usePatientEvaluationForms(patientId: string | undefined) {
       return data
     },
     enabled: Boolean(patientId) && isSupabaseConfigured(),
+    staleTime: LIST_STALE_MS,
   })
 }
 
@@ -38,6 +44,7 @@ export function usePatientEvaluationForm(
       Boolean(patientId) &&
       Boolean(formId) &&
       isSupabaseConfigured(),
+    staleTime: LIST_STALE_MS,
   })
 }
 
@@ -103,6 +110,41 @@ export function useUpdatePatientEvaluationForm(patientId: string) {
       void qc.invalidateQueries({
         queryKey: queryKeys.evaluationForms.detail(patientId, v.formId),
       })
+    },
+  })
+}
+
+export function useDeletePatientEvaluationForm(patientId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      formId,
+      evolutionCount,
+    }: {
+      formId: string
+      evolutionCount: number
+    }) => {
+      if (evolutionCount > 0) {
+        const { error: evoError } = await deleteEvolutionEntriesByFormId(formId)
+        if (evoError) throw evoError
+      }
+      const { error } = await deletePatientEvaluationForm(formId)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      toastSuccess('Ficha eliminada.')
+      void qc.invalidateQueries({
+        queryKey: queryKeys.evaluationForms.byPatient(patientId),
+      })
+      void qc.invalidateQueries({
+        queryKey: queryKeys.evolution(patientId),
+      })
+      void qc.invalidateQueries({
+        queryKey: queryKeys.dashboard.evolutionOverview,
+      })
+    },
+    onError: (err) => {
+      toastError(err instanceof Error ? err : new Error(String(err)))
     },
   })
 }

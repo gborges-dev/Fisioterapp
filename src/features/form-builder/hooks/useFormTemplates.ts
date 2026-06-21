@@ -22,6 +22,7 @@ export function useFormTemplates() {
       return data
     },
     enabled: isSupabaseConfigured(),
+    staleTime: 30_000,
   })
 }
 
@@ -34,6 +35,7 @@ export function useFormTemplate(id: string | undefined) {
       return data
     },
     enabled: Boolean(id) && isSupabaseConfigured(),
+    staleTime: 30_000,
   })
 }
 

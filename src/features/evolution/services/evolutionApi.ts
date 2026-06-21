@@ -18,3 +18,30 @@ export async function listEvolution(patientId: string) {
 export async function createEvolution(payload: EvolutionInsert) {
   return supabase.from('evolution_entries').insert(payload).select().single()
 }
+
+export async function deleteEvolutionEntry(id: string) {
+  return supabase.from('evolution_entries').delete().eq('id', id)
+}
+
+export async function updateEvolutionEntry(
+  id: string,
+  patch: {
+    content: string
+    entry_date: string
+    patient_evaluation_form_id: string
+  },
+) {
+  return supabase
+    .from('evolution_entries')
+    .update(patch)
+    .eq('id', id)
+    .select()
+    .single()
+}
+
+export async function deleteEvolutionEntriesByFormId(formId: string) {
+  return supabase
+    .from('evolution_entries')
+    .delete()
+    .eq('patient_evaluation_form_id', formId)
+}

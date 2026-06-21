@@ -1,5 +1,11 @@
-import { MenuItem, Stack, TextField } from '@mui/material'
+import { Checkbox, FormControl, FormControlLabel, FormGroup, FormLabel, MenuItem, Stack, TextField, Typography } from '@mui/material'
+import type { ReactNode } from 'react'
 
+import {
+  formatMultiselectDisplay,
+  parseMultiselectAnswer,
+  serializeMultiselectAnswer,
+} from '../../../lib/formAnswers'
 import type { FormFieldSchema } from '../../../types/database.types'
 
 export function EvaluationFormFieldsRenderer({
@@ -69,6 +75,45 @@ export function EvaluationFormFieldsRenderer({
           )
         }
 
+        if (field.type === 'multiselect') {
+          const selected = parseMultiselectAnswer(value)
+
+          if (readOnly) {
+            return (
+              <BoxField key={field.id} label={field.label} required={field.required}>
+                <Typography variant="body2" color="text.secondary">
+                  {formatMultiselectDisplay(value) || '—'}
+                </Typography>
+              </BoxField>
+            )
+          }
+
+          return (
+            <FormControl key={field.id} required={field.required} fullWidth>
+              <FormLabel>{field.label}</FormLabel>
+              <FormGroup>
+                {(field.options ?? []).map((opt) => (
+                  <FormControlLabel
+                    key={opt}
+                    control={
+                      <Checkbox
+                        checked={selected.includes(opt)}
+                        onChange={(e) => {
+                          const next = e.target.checked
+                            ? [...selected, opt]
+                            : selected.filter((s) => s !== opt)
+                          onChange?.(field.id, serializeMultiselectAnswer(next))
+                        }}
+                      />
+                    }
+                    label={opt}
+                  />
+                ))}
+              </FormGroup>
+            </FormControl>
+          )
+        }
+
         return (
           <TextField
             key={field.id}
@@ -91,5 +136,22 @@ export function EvaluationFormFieldsRenderer({
         )
       })}
     </Stack>
+  )
+}
+
+function BoxField({
+  label,
+  required,
+  children,
+}: {
+  label: string
+  required?: boolean
+  children: ReactNode
+}) {
+  return (
+    <FormControl fullWidth required={required}>
+      <FormLabel sx={{ mb: 0.5 }}>{label}</FormLabel>
+      {children}
+    </FormControl>
   )
 }

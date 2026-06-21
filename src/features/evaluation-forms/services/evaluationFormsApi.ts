@@ -107,6 +107,17 @@ export async function updatePatientEvaluationForm(
     .single()
 }
 
+export async function deletePatientEvaluationForm(id: string) {
+  return supabase.from('patient_evaluation_forms').delete().eq('id', id)
+}
+
+export async function countEvolutionEntriesByFormId(formId: string) {
+  return supabase
+    .from('evolution_entries')
+    .select('id', { count: 'exact', head: true })
+    .eq('patient_evaluation_form_id', formId)
+}
+
 export function parseEvaluationSchema(raw: Json): FormFieldSchema[] {
   return parseFormSchema(raw)
 }

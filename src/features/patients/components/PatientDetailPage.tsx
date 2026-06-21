@@ -3,7 +3,7 @@ import {
   Box,
   Button,
   CircularProgress,
-  Stack,
+  Grid,
   Typography,
 } from '@mui/material'
 import { Link, useParams } from 'react-router-dom'
@@ -81,27 +81,38 @@ export function PatientDetailPage() {
             <Field label="Notas" value={data.notes} />
           </Box>
 
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mt: 3 }}>
-            <Button variant="outlined" component={Link} to={`/patients/${data.id}/edit`}>
-              Editar paciente
-            </Button>
-            <Button
-              variant="contained"
-              component={Link}
-              to={`/patients/${data.id}/evaluation-forms`}
-            >
-              Fichas de avaliação
-            </Button>
-            <Button variant="outlined" component={Link} to={`/patients/${data.id}/evolution`}>
-              Evolução
-            </Button>
-            <Button variant="outlined" component={Link} to={`/patients/${data.id}/documents`}>
-              Documentos
-            </Button>
-            <Button component={Link} to="/patients">
-              Voltar à lista
-            </Button>
-          </Stack>
+          <Grid container spacing={2} sx={{ mt: 3 }}>
+            <Grid size={{ xs: 6, sm: 'auto' }}>
+              <Button fullWidth variant="outlined" component={Link} to={`/patients/${data.id}/edit`}>
+                Editar paciente
+              </Button>
+            </Grid>
+            <Grid size={{ xs: 6, sm: 'auto' }}>
+              <Button
+                fullWidth
+                variant="contained"
+                component={Link}
+                to={`/patients/${data.id}/evaluation-forms`}
+              >
+                Fichas de avaliação
+              </Button>
+            </Grid>
+            <Grid size={{ xs: 6, sm: 'auto' }}>
+              <Button fullWidth variant="outlined" component={Link} to={`/patients/${data.id}/evolution`}>
+                Evolução
+              </Button>
+            </Grid>
+            <Grid size={{ xs: 6, sm: 'auto' }}>
+              <Button fullWidth variant="outlined" component={Link} to={`/patients/${data.id}/documents`}>
+                Documentos
+              </Button>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 'auto' }}>
+              <Button fullWidth component={Link} to="/patients">
+                Voltar à lista
+              </Button>
+            </Grid>
+          </Grid>
         </>
       ) : null}
     </Box>

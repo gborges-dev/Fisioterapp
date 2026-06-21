@@ -211,6 +211,15 @@ export function AppLayout() {
                 component={NavLink}
                 to={item.to}
                 end={item.to === '/'}
+                sx={{
+                  '@media (max-width: 359px)': {
+                    '& .MuiBottomNavigationAction-label': {
+                      display: 'none',
+                    },
+                    minWidth: 'auto',
+                    px: 1,
+                  },
+                }}
               />
             ))}
           </BottomNavigation>

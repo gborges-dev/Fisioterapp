@@ -127,7 +127,8 @@ export function parseFormSchema(raw: Json): FormFieldSchema[] {
       o.type === 'textarea' ||
       o.type === 'number' ||
       o.type === 'date' ||
-      o.type === 'select'
+      o.type === 'select' ||
+      o.type === 'multiselect'
         ? o.type
         : 'text'
     const required = Boolean(o.required)

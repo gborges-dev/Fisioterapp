@@ -7,15 +7,7 @@ import {
   Alert,
   Box,
   Button,
-  Card,
-  CardActions,
-  CardContent,
   Chip,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Grid,
   IconButton,
   InputAdornment,
@@ -27,8 +19,12 @@ import {
 import { useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { ConfirmDeleteDialog } from '../../../components/ConfirmDeleteDialog'
+import { ListCard } from '../../../components/ListCard'
+import { ListPageSkeleton } from '../../../components/ListPageSkeleton'
 import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
 import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
+import { toastError, toastSuccess } from '../../../components/toast'
 import { useSortState, useTableFilterSort } from '../../../hooks/useTableFilterSort'
 import { usePatientMutations, usePatients } from '../hooks/usePatients'
 import type { PatientRow } from '../services/patientsApi'
@@ -78,9 +74,10 @@ export function PatientListPage() {
     if (!deleteId) return
     try {
       await remove.mutateAsync(deleteId)
+      toastSuccess('Paciente eliminado.')
       setDeleteId(null)
-    } catch {
-      /* toast pode ser acrescentado */
+    } catch (err) {
+      toastError(err instanceof Error ? err : new Error(String(err)))
     }
   }
 
@@ -132,7 +129,7 @@ export function PatientListPage() {
         }}
       />
 
-      {isLoading ? <CircularProgress aria-label="A carregar pacientes" /> : null}
+      {isLoading ? <ListPageSkeleton /> : null}
       {isError ? (
         <Alert severity="error">{(error as Error).message}</Alert>
       ) : null}
@@ -170,106 +167,84 @@ export function PatientListPage() {
           </Stack>
           <Grid container spacing={2}>
             {filteredSorted.map((p) => (
-              <Grid key={p.id} size={{ xs: 12, sm: 6, lg: 4 }}>
-                <Card
-                  variant="outlined"
-                  sx={{
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    borderRadius: 2,
-                    transition: (t) =>
-                      t.transitions.create(['box-shadow', 'border-color'], {
-                        duration: t.transitions.duration.shorter,
-                      }),
-                    '&:hover': {
-                      borderColor: 'primary.light',
-                      boxShadow: (t) => t.shadows[2],
-                    },
-                  }}
+              <Grid key={p.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+                <ListCard
+                  actions={
+                    <>
+                      <Tooltip title="Fichas de avaliação">
+                        <IconButton
+                          component={Link}
+                          to={`/patients/${p.id}/evaluation-forms`}
+                          size="small"
+                          color="primary"
+                          aria-label="Fichas de avaliação"
+                        >
+                          <AssignmentOutlinedIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Editar paciente">
+                        <IconButton
+                          component={Link}
+                          to={`/patients/${p.id}/edit`}
+                          size="small"
+                          color="primary"
+                          aria-label="Editar paciente"
+                        >
+                          <EditOutlinedIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Eliminar paciente">
+                        <IconButton
+                          size="small"
+                          color="error"
+                          aria-label="Eliminar paciente"
+                          onClick={() => setDeleteId(p.id)}
+                        >
+                          <DeleteOutlineIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </>
+                  }
                 >
-                  <CardContent sx={{ flexGrow: 1, pt: 2 }}>
-                    <Typography
-                      variant="subtitle1"
-                      component={Link}
-                      to={`/patients/${p.id}`}
-                      sx={{
-                        fontWeight: 600,
-                        color: 'text.primary',
-                        textDecoration: 'none',
-                        '&:hover': { color: 'primary.main' },
-                      }}
-                    >
-                      {p.full_name}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                      {p.email?.trim() || 'Sem email'}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {p.phone?.trim() || 'Sem telefone'}
-                    </Typography>
-                  </CardContent>
-                  <CardActions sx={{ justifyContent: 'flex-end', px: 2, pb: 2, pt: 0 }}>
-                    <Tooltip title="Fichas de avaliação">
-                      <IconButton
-                        component={Link}
-                        to={`/patients/${p.id}/evaluation-forms`}
-                        size="small"
-                        color="primary"
-                        aria-label="Fichas de avaliação"
-                      >
-                        <AssignmentOutlinedIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Editar paciente">
-                      <IconButton
-                        component={Link}
-                        to={`/patients/${p.id}/edit`}
-                        size="small"
-                        color="primary"
-                        aria-label="Editar paciente"
-                      >
-                        <EditOutlinedIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Eliminar paciente">
-                      <IconButton
-                        size="small"
-                        color="error"
-                        aria-label="Eliminar paciente"
-                        onClick={() => setDeleteId(p.id)}
-                      >
-                        <DeleteOutlineIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </CardActions>
-                </Card>
+                  <Typography
+                    variant="subtitle1"
+                    component={Link}
+                    to={`/patients/${p.id}`}
+                    sx={{
+                      fontWeight: 600,
+                      color: 'text.primary',
+                      textDecoration: 'none',
+                      '&:hover': { color: 'primary.main' },
+                    }}
+                  >
+                    {p.full_name}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    {p.email?.trim() || 'Sem email'}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {p.phone?.trim() || 'Sem telefone'}
+                  </Typography>
+                </ListCard>
               </Grid>
             ))}
           </Grid>
         </Box>
       ) : null}
 
-      <Dialog open={Boolean(deleteId)} onClose={() => setDeleteId(null)}>
-        <DialogTitle>Eliminar paciente?</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2">
+      <ConfirmDeleteDialog
+        open={Boolean(deleteId)}
+        title="Eliminar paciente?"
+        message={
+          <>
             Esta ação não pode ser anulada. Confirma a eliminação de{' '}
             <strong>{patientToDelete?.full_name ?? 'este paciente'}</strong>?
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteId(null)}>Cancelar</Button>
-          <Button
-            color="error"
-            variant="contained"
-            onClick={() => void confirmDelete()}
-            disabled={remove.isPending}
-          >
-            Eliminar
-          </Button>
-        </DialogActions>
-      </Dialog>
+          </>
+        }
+        loading={remove.isPending}
+        onCancel={() => setDeleteId(null)}
+        onConfirm={() => void confirmDelete()}
+      />
     </Box>
   )
 }

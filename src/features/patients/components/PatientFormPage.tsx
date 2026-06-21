@@ -165,7 +165,7 @@ function PatientFormFields({
         component="form"
         onSubmit={(e) => void handleSubmit(e)}
         noValidate
-        sx={{ maxWidth: 720 }}
+        sx={{ maxWidth: { xs: '100%', sm: 720 } }}
       >
         <Grid container spacing={2}>
           <Grid size={{ xs: 12 }}>

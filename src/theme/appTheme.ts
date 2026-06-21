@@ -46,7 +46,7 @@ export function createAppTheme(mode: PaletteMode) {
           : { default: '#141210', paper: '#1e1b18' },
       text:
         mode === 'light'
-          ? { primary: '#1c1915', secondary: '#5c534a' }
+          ? { primary: '#1c1915', secondary: '#4a433c' }
           : { primary: '#f2ebe3', secondary: '#b8aea3' },
       divider: alpha(primary.main, mode === 'light' ? 0.14 : 0.22),
       success: { main: mode === 'light' ? '#059669' : '#34d399' },
@@ -118,8 +118,11 @@ export function createAppTheme(mode: PaletteMode) {
         styleOverrides: {
           root: ({ theme }) => ({
             borderRadius: 10,
-            border: `1px solid ${alpha(theme.palette.primary.main, theme.palette.mode === 'light' ? 0.12 : 0.22)}`,
-            boxShadow: 'none',
+            border: `1px solid ${alpha(theme.palette.primary.main, theme.palette.mode === 'light' ? 0.22 : 0.35)}`,
+            boxShadow:
+              theme.palette.mode === 'light'
+                ? `0px 1px 2px rgba(28, 25, 21, 0.06), 0px 2px 8px ${alpha(theme.palette.primary.main, 0.08)}`
+                : `0px 1px 3px rgba(0,0,0,0.4), 0px 2px 8px ${alpha(theme.palette.primary.main, 0.12)}`,
             backgroundImage: 'none',
           }),
         },

@@ -12,6 +12,7 @@ import {
 import { LineChart } from '@mui/x-charts/LineChart'
 import { useTheme } from '@mui/material/styles'
 
+import { ListPageSkeleton } from '../../../components/ListPageSkeleton'
 import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
 import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
 import {
@@ -56,7 +57,7 @@ export function DashboardPage() {
       </Typography>
       <SupabaseConfigAlert />
       {isLoading ? (
-        <CircularProgress aria-label="A carregar métricas" />
+        <ListPageSkeleton count={4} cardHeight={88} />
       ) : null}
       {isError ? (
         <Alert severity="error" sx={{ mb: 2 }}>
@@ -117,9 +118,11 @@ export function DashboardPage() {
                     {(evoDaily.error as Error).message}
                   </Alert>
                 ) : (
-                  <LineChart
-                    height={280}
-                    margin={{ left: 40, right: 12, top: 8, bottom: 28 }}
+                  <Box sx={{ width: '100%', overflowX: 'auto' }}>
+                    <LineChart
+                      height={280}
+                      sx={{ minWidth: { xs: 320, sm: '100%' } }}
+                      margin={{ left: 40, right: 12, top: 8, bottom: 28 }}
                     xAxis={[
                       {
                         scaleType: 'point',
@@ -139,6 +142,7 @@ export function DashboardPage() {
                     grid={{ vertical: true, horizontal: true }}
                     hideLegend
                   />
+                  </Box>
                 )}
               </CardContent>
             </Card>
@@ -158,9 +162,11 @@ export function DashboardPage() {
                     {(subDaily.error as Error).message}
                   </Alert>
                 ) : (
-                  <LineChart
-                    height={280}
-                    margin={{ left: 40, right: 12, top: 8, bottom: 28 }}
+                  <Box sx={{ width: '100%', overflowX: 'auto' }}>
+                    <LineChart
+                      height={280}
+                      sx={{ minWidth: { xs: 320, sm: '100%' } }}
+                      margin={{ left: 40, right: 12, top: 8, bottom: 28 }}
                     xAxis={[
                       {
                         scaleType: 'point',
@@ -180,6 +186,7 @@ export function DashboardPage() {
                     grid={{ vertical: true, horizontal: true }}
                     hideLegend
                   />
+                  </Box>
                 )}
               </CardContent>
             </Card>

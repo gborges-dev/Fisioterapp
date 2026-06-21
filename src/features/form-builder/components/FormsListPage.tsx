@@ -9,10 +9,8 @@ import {
   Box,
   Button,
   Card,
-  CardActions,
   CardContent,
   Chip,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -31,6 +29,9 @@ import {
 import { useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { ConfirmDeleteDialog } from '../../../components/ConfirmDeleteDialog'
+import { ListCard } from '../../../components/ListCard'
+import { ListPageSkeleton } from '../../../components/ListPageSkeleton'
 import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
 import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
 import { useToast } from '../../../components/toast'
@@ -47,6 +48,7 @@ function fieldTypeLabel(type: FormFieldType): string {
     number: 'Número',
     date: 'Data',
     select: 'Lista de opções',
+    multiselect: 'Múltipla escolha',
   }
   return m[type] ?? type
 }
@@ -186,6 +188,7 @@ export function FormsListPage() {
         </Button>
       </Box>
 
+      {!isLoading && !isError ? (
       <Grid container spacing={2} sx={{ mb: 2 }}>
         <Grid size={{ xs: 12, sm: 4 }}>
           <Card variant="outlined">
@@ -218,6 +221,7 @@ export function FormsListPage() {
           </Card>
         </Grid>
       </Grid>
+      ) : null}
 
       <SupabaseConfigAlert />
       <TextField
@@ -236,7 +240,7 @@ export function FormsListPage() {
         }}
       />
 
-      {isLoading ? <CircularProgress /> : null}
+      {isLoading ? <ListPageSkeleton /> : null}
       {isError ? (
         <Alert severity="error">{(error as Error).message}</Alert>
       ) : null}
@@ -273,75 +277,60 @@ export function FormsListPage() {
           </Stack>
           <Grid container spacing={2}>
             {filteredSorted.map((row) => (
-              <Grid key={row.id} size={{ xs: 12, sm: 6, lg: 4 }}>
-                <Card
-                  variant="outlined"
-                  sx={{
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    borderRadius: 2,
-                    transition: (t) =>
-                      t.transitions.create(['box-shadow', 'border-color'], {
-                        duration: t.transitions.duration.shorter,
-                      }),
-                    '&:hover': {
-                      borderColor: 'primary.light',
-                      boxShadow: (t) => t.shadows[2],
-                    },
-                  }}
+              <Grid key={row.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+                <ListCard
+                  actions={
+                    <>
+                      <Tooltip title="Pré-visualizar perguntas">
+                        <IconButton
+                          size="small"
+                          aria-label="Pré-visualizar"
+                          onClick={() => setPreviewRow(row)}
+                        >
+                          <VisibilityOutlinedIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Editar">
+                        <IconButton
+                          component={Link}
+                          to={`/forms/${row.id}/edit`}
+                          size="small"
+                          color="primary"
+                          aria-label="Editar formulário"
+                        >
+                          <EditOutlinedIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Copiar link público">
+                        <IconButton
+                          size="small"
+                          aria-label="Link público"
+                          onClick={() => void handleCreateLink(row.id)}
+                          disabled={createLink.isPending}
+                        >
+                          <LinkIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Eliminar">
+                        <IconButton
+                          size="small"
+                          color="error"
+                          aria-label="Eliminar formulário"
+                          onClick={() => setDeleteId(row.id)}
+                        >
+                          <DeleteOutlineIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </>
+                  }
                 >
-                  <CardContent sx={{ flexGrow: 1, pt: 2 }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                      {row.title}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                      Atualizado em {formatDate(row.updated_at)}
-                    </Typography>
-                  </CardContent>
-                  <CardActions sx={{ justifyContent: 'flex-end', flexWrap: 'wrap', px: 2, pb: 2, pt: 0, gap: 0.5 }}>
-                    <Tooltip title="Pré-visualizar perguntas">
-                      <IconButton
-                        size="small"
-                        aria-label="Pré-visualizar"
-                        onClick={() => setPreviewRow(row)}
-                      >
-                        <VisibilityOutlinedIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Editar">
-                      <IconButton
-                        component={Link}
-                        to={`/forms/${row.id}/edit`}
-                        size="small"
-                        color="primary"
-                        aria-label="Editar formulário"
-                      >
-                        <EditOutlinedIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Copiar link público">
-                      <IconButton
-                        size="small"
-                        aria-label="Link público"
-                        onClick={() => void handleCreateLink(row.id)}
-                        disabled={createLink.isPending}
-                      >
-                        <LinkIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Eliminar">
-                      <IconButton
-                        size="small"
-                        color="error"
-                        aria-label="Eliminar formulário"
-                        onClick={() => setDeleteId(row.id)}
-                      >
-                        <DeleteOutlineIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </CardActions>
-                </Card>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                    {row.title}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    Atualizado em {formatDate(row.updated_at)}
+                  </Typography>
+                </ListCard>
               </Grid>
             ))}
           </Grid>
@@ -389,27 +378,20 @@ export function FormsListPage() {
         </DialogActions>
       </Dialog>
 
-      <Dialog open={Boolean(deleteId)} onClose={() => setDeleteId(null)}>
-        <DialogTitle>Eliminar formulário?</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2">
+      <ConfirmDeleteDialog
+        open={Boolean(deleteId)}
+        title="Eliminar formulário?"
+        message={
+          <>
             Os links públicos e respostas associadas podem ser removidos pela base de
             dados. Confirma a eliminação de{' '}
             <strong>{rowToDelete?.title ?? 'este modelo'}</strong>?
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteId(null)}>Cancelar</Button>
-          <Button
-            color="error"
-            variant="contained"
-            onClick={() => void confirmDelete()}
-            disabled={remove.isPending}
-          >
-            Eliminar
-          </Button>
-        </DialogActions>
-      </Dialog>
+          </>
+        }
+        loading={remove.isPending}
+        onCancel={() => setDeleteId(null)}
+        onConfirm={() => void confirmDelete()}
+      />
     </Box>
   )
 }

@@ -1,9 +1,14 @@
 import { parseFormSchema } from '../../form-builder/services/formsApi'
 import type { Json } from '../../../types/database.types'
 
+import { formatMultiselectDisplay } from '../../../lib/formAnswers'
+
 function valueToString(v: unknown): string {
   if (v === null || v === undefined) return ''
   if (typeof v === 'boolean') return v ? 'Sim' : 'Não'
+  if (typeof v === 'string' && v.trim().startsWith('[')) {
+    return formatMultiselectDisplay(v)
+  }
   if (Array.isArray(v)) return v.map((x) => String(x)).join(', ')
   if (typeof v === 'object') return JSON.stringify(v)
   return String(v)

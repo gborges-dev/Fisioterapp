@@ -1,26 +1,31 @@
 import AddIcon from '@mui/icons-material/Add'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
 import {
   Alert,
   Box,
   Button,
-  Card,
-  CardActions,
-  CardContent,
-  CircularProgress,
   Grid,
   IconButton,
   Stack,
   Tooltip,
   Typography,
 } from '@mui/material'
+import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
+import { ConfirmDeleteDialog } from '../../../components/ConfirmDeleteDialog'
+import { ListCard } from '../../../components/ListCard'
+import { ListPageSkeleton } from '../../../components/ListPageSkeleton'
 import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
 import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
 import { usePatient } from '../../patients/hooks/usePatients'
-import { usePatientEvaluationForms } from '../hooks/usePatientEvaluationForms'
-import { parseEvaluationSchema } from '../services/evaluationFormsApi'
+import {
+  useDeletePatientEvaluationForm,
+  usePatientEvaluationForms,
+} from '../hooks/usePatientEvaluationForms'
+import { countEvolutionEntriesByFormId } from '../services/evaluationFormsApi'
+import type { PatientEvaluationFormRow } from '../types'
 
 function formatDate(iso: string) {
   try {
@@ -38,6 +43,40 @@ export function PatientEvaluationFormsPage() {
   const { id: patientId } = useParams<{ id: string }>()
   const { data: patient } = usePatient(patientId)
   const { data, isLoading, isError, error } = usePatientEvaluationForms(patientId)
+  const remove = useDeletePatientEvaluationForm(patientId ?? '')
+  const [formToDelete, setFormToDelete] = useState<PatientEvaluationFormRow | null>(
+    null,
+  )
+  const [evolutionCount, setEvolutionCount] = useState(0)
+  const [loadingCount, setLoadingCount] = useState(false)
+
+  const openDeleteDialog = async (form: PatientEvaluationFormRow) => {
+    setFormToDelete(form)
+    setLoadingCount(true)
+    try {
+      const { count, error: countError } = await countEvolutionEntriesByFormId(form.id)
+      if (countError) throw countError
+      setEvolutionCount(count ?? 0)
+    } catch {
+      setEvolutionCount(0)
+    } finally {
+      setLoadingCount(false)
+    }
+  }
+
+  const confirmDelete = async () => {
+    if (!formToDelete) return
+    try {
+      await remove.mutateAsync({
+        formId: formToDelete.id,
+        evolutionCount,
+      })
+      setFormToDelete(null)
+      setEvolutionCount(0)
+    } catch {
+      /* toast no hook */
+    }
+  }
 
   if (!patientId) {
     return <Alert severity="error">Paciente inválido.</Alert>
@@ -57,15 +96,12 @@ export function PatientEvaluationFormsPage() {
             : [{ label: 'Fichas de avaliação' }]),
         ]}
       />
-      <Box
-        sx={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 2,
-          mb: 2,
-        }}
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        justifyContent="space-between"
+        alignItems={{ xs: 'stretch', sm: 'center' }}
+        spacing={2}
+        sx={{ mb: 2 }}
       >
         <Typography variant="h4" component="h2">
           Fichas de avaliação
@@ -75,21 +111,22 @@ export function PatientEvaluationFormsPage() {
           startIcon={<AddIcon />}
           component={Link}
           to={`/patients/${patientId}/evaluation-forms/new`}
+          sx={{ alignSelf: { xs: 'stretch', sm: 'auto' } }}
         >
           Adicionar ficha
         </Button>
-      </Box>
+      </Stack>
 
       <Button component={Link} to={`/patients/${patientId}`} sx={{ mb: 2 }}>
         Voltar ao paciente
       </Button>
       <SupabaseConfigAlert />
 
-      {isLoading ? <CircularProgress /> : null}
+      {isLoading ? <ListPageSkeleton /> : null}
       {isError ? (
         <Alert severity="error">{(error as Error).message}</Alert>
       ) : null}
-      {data && data.length === 0 ? (
+      {!isLoading && !isError && data && data.length === 0 ? (
         <Stack spacing={2}>
           <Typography color="text.secondary">
             Este paciente ainda não tem fichas de avaliação.
@@ -105,25 +142,13 @@ export function PatientEvaluationFormsPage() {
           </Button>
         </Stack>
       ) : null}
-      {data && data.length > 0 ? (
+      {!isLoading && !isError && data && data.length > 0 ? (
         <Grid container spacing={2}>
-          {data.map((form) => {
-            const fieldCount = parseEvaluationSchema(form.schema).length
-            return (
-              <Grid key={form.id} size={{ xs: 12, sm: 6, md: 4 }}>
-                <Card variant="outlined" sx={{ height: '100%', borderRadius: 2 }}>
-                  <CardContent>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                      {form.title}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                      Data: {formatDate(form.evaluation_date)}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {fieldCount} campo{fieldCount !== 1 ? 's' : ''}
-                    </Typography>
-                  </CardContent>
-                  <CardActions sx={{ justifyContent: 'flex-end', px: 2, pb: 2 }}>
+          {data.map((form) => (
+            <Grid key={form.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+              <ListCard
+                actions={
+                  <>
                     <Tooltip title="Ver ficha">
                       <IconButton
                         component={Link}
@@ -135,13 +160,59 @@ export function PatientEvaluationFormsPage() {
                         <VisibilityOutlinedIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
-                  </CardActions>
-                </Card>
-              </Grid>
-            )
-          })}
+                    <Tooltip title="Eliminar ficha">
+                      <IconButton
+                        size="small"
+                        color="error"
+                        aria-label="Eliminar ficha"
+                        onClick={() => void openDeleteDialog(form)}
+                        disabled={remove.isPending}
+                      >
+                        <DeleteOutlineIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </>
+                }
+              >
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  {form.title}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                  Data: {formatDate(form.evaluation_date)}
+                </Typography>
+              </ListCard>
+            </Grid>
+          ))}
         </Grid>
       ) : null}
+
+      <ConfirmDeleteDialog
+        open={Boolean(formToDelete)}
+        title="Eliminar ficha?"
+        message={
+          loadingCount ? (
+            'A verificar registos de evolução…'
+          ) : evolutionCount > 0 ? (
+            <>
+              Esta ficha tem <strong>{evolutionCount}</strong> registo
+              {evolutionCount !== 1 ? 's' : ''} de evolução. A eliminação remove a
+              ficha e os registos associados. Confirma a eliminação de{' '}
+              <strong>{formToDelete?.title ?? 'esta ficha'}</strong>?
+            </>
+          ) : (
+            <>
+              Esta ação não pode ser anulada. Confirma a eliminação de{' '}
+              <strong>{formToDelete?.title ?? 'esta ficha'}</strong>?
+            </>
+          )
+        }
+        loading={remove.isPending || loadingCount}
+        onCancel={() => {
+          setFormToDelete(null)
+          setEvolutionCount(0)
+        }}
+        onConfirm={() => void confirmDelete()}
+      />
     </Box>
   )
 }

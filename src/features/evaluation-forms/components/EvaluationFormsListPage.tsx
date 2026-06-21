@@ -6,15 +6,7 @@ import {
   Alert,
   Box,
   Button,
-  Card,
-  CardActions,
-  CardContent,
   Chip,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Grid,
   IconButton,
   InputAdornment,
@@ -26,14 +18,17 @@ import {
 import { useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { ConfirmDeleteDialog } from '../../../components/ConfirmDeleteDialog'
+import { ListCard } from '../../../components/ListCard'
+import { ListPageSkeleton } from '../../../components/ListPageSkeleton'
 import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
 import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
+import { toastError, toastSuccess } from '../../../components/toast'
 import { useSortState, useTableFilterSort } from '../../../hooks/useTableFilterSort'
 import {
   useEvaluationFormTemplateMutations,
   useEvaluationFormTemplates,
 } from '../hooks/useEvaluationFormTemplates'
-import { parseEvaluationSchema } from '../services/evaluationFormsApi'
 import type { EvaluationFormTemplateRow } from '../types'
 
 type SortKey = 'title' | 'updated_at'
@@ -98,9 +93,10 @@ export function EvaluationFormsListPage() {
     if (!deleteId) return
     try {
       await remove.mutateAsync(deleteId)
+      toastSuccess('Modelo eliminado.')
       setDeleteId(null)
-    } catch {
-      /* toast pode ser acrescentado */
+    } catch (err) {
+      toastError(err instanceof Error ? err : new Error(String(err)))
     }
   }
 
@@ -112,15 +108,12 @@ export function EvaluationFormsListPage() {
           { label: 'Fichas de avaliação' },
         ]}
       />
-      <Box
-        sx={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 2,
-          mb: 2,
-        }}
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        justifyContent="space-between"
+        alignItems={{ xs: 'stretch', sm: 'center' }}
+        spacing={2}
+        sx={{ mb: 2 }}
       >
         <Typography variant="h4" component="h2">
           Fichas de avaliação
@@ -130,10 +123,11 @@ export function EvaluationFormsListPage() {
           startIcon={<AddIcon />}
           component={Link}
           to="/evaluation-forms/new"
+          sx={{ alignSelf: { xs: 'stretch', sm: 'auto' } }}
         >
           Novo modelo
         </Button>
-      </Box>
+      </Stack>
 
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
         Crie modelos de ficha para diferentes áreas de atendimento. Depois vincule
@@ -157,14 +151,14 @@ export function EvaluationFormsListPage() {
         }}
       />
 
-      {isLoading ? <CircularProgress aria-label="A carregar modelos" /> : null}
+      {isLoading ? <ListPageSkeleton /> : null}
       {isError ? (
         <Alert severity="error">{(error as Error).message}</Alert>
       ) : null}
-      {data && data.length === 0 ? (
+      {!isLoading && !isError && data && data.length === 0 ? (
         <Typography>Nenhum modelo registado.</Typography>
       ) : null}
-      {data && data.length > 0 ? (
+      {!isLoading && !isError && data && data.length > 0 ? (
         <Box>
           <Stack
             direction="row"
@@ -193,30 +187,11 @@ export function EvaluationFormsListPage() {
             ))}
           </Stack>
           <Grid container spacing={2}>
-            {filteredSorted.map((t) => {
-              const fieldCount = parseEvaluationSchema(t.schema).length
-              return (
-                <Grid key={t.id} size={{ xs: 12, sm: 6, lg: 4 }}>
-                  <Card variant="outlined" sx={{ height: '100%', borderRadius: 2 }}>
-                    <CardContent>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                        {t.title}
-                      </Typography>
-                      {t.description?.trim() ? (
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{ mt: 1 }}
-                        >
-                          {t.description}
-                        </Typography>
-                      ) : null}
-                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                        {fieldCount} campo{fieldCount !== 1 ? 's' : ''} · Atualizado{' '}
-                        {formatDate(t.updated_at)}
-                      </Typography>
-                    </CardContent>
-                    <CardActions sx={{ justifyContent: 'flex-end', px: 2, pb: 2 }}>
+            {filteredSorted.map((t) => (
+              <Grid key={t.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+                <ListCard
+                  actions={
+                    <>
                       <Tooltip title="Editar modelo">
                         <IconButton
                           component={Link}
@@ -238,35 +213,44 @@ export function EvaluationFormsListPage() {
                           <DeleteOutlineIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
-                    </CardActions>
-                  </Card>
-                </Grid>
-              )
-            })}
+                    </>
+                  }
+                >
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                    {t.title}
+                  </Typography>
+                  {t.description?.trim() ? (
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mt: 1 }}
+                    >
+                      {t.description}
+                    </Typography>
+                  ) : null}
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    Atualizado {formatDate(t.updated_at)}
+                  </Typography>
+                </ListCard>
+              </Grid>
+            ))}
           </Grid>
         </Box>
       ) : null}
 
-      <Dialog open={Boolean(deleteId)} onClose={() => setDeleteId(null)}>
-        <DialogTitle>Eliminar modelo?</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2">
+      <ConfirmDeleteDialog
+        open={Boolean(deleteId)}
+        title="Eliminar modelo?"
+        message={
+          <>
             Esta ação não pode ser anulada. Confirma a eliminação de{' '}
             <strong>{templateToDelete?.title ?? 'este modelo'}</strong>?
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteId(null)}>Cancelar</Button>
-          <Button
-            color="error"
-            variant="contained"
-            onClick={() => void confirmDelete()}
-            disabled={remove.isPending}
-          >
-            Eliminar
-          </Button>
-        </DialogActions>
-      </Dialog>
+          </>
+        }
+        loading={remove.isPending}
+        onCancel={() => setDeleteId(null)}
+        onConfirm={() => void confirmDelete()}
+      />
     </Box>
   )
 }

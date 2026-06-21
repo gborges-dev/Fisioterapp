@@ -24,6 +24,7 @@ export function usePatients() {
       return data
     },
     enabled: isSupabaseConfigured(),
+    staleTime: 30_000,
   })
 }
 
