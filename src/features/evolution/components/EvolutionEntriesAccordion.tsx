@@ -112,9 +112,35 @@ export function EvolutionEntriesAccordion({
               expandIcon={<ExpandMoreIcon />}
               aria-controls={`evolution-panel-${row.id}`}
               id={`evolution-header-${row.id}`}
-              sx={{ px: 2 }}
+              sx={{
+                px: 2,
+                py: 1.5,
+                alignItems: 'flex-start',
+                minHeight: 'unset',
+                '&.Mui-expanded': {
+                  minHeight: 'unset',
+                },
+                '& .MuiAccordionSummary-content': {
+                  display: 'block',
+                  my: 0,
+                  overflow: 'visible',
+                  minWidth: 0,
+                },
+                '& .MuiAccordionSummary-expandIconWrapper': {
+                  alignSelf: 'center',
+                },
+              }}
             >
-              <Box sx={{ minWidth: 0, flex: 1, pr: 1 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 0.5,
+                  width: '100%',
+                  minWidth: 0,
+                }}
+              >
+                <Box sx={{ minWidth: 0, flex: 1, pr: 1 }}>
                 <Stack
                   direction="row"
                   alignItems="center"
@@ -143,7 +169,12 @@ export function EvolutionEntriesAccordion({
                   </Typography>
                 ) : null}
               </Box>
-              <Stack direction="row" spacing={0.25} onClick={(e) => e.stopPropagation()}>
+              <Stack
+                direction="row"
+                spacing={0.25}
+                onClick={(e) => e.stopPropagation()}
+                sx={{ alignSelf: 'center', flexShrink: 0 }}
+              >
                 <Tooltip title="Editar registo">
                   <IconButton
                     size="small"
@@ -166,6 +197,7 @@ export function EvolutionEntriesAccordion({
                   </IconButton>
                 </Tooltip>
               </Stack>
+              </Box>
             </AccordionSummary>
             <AccordionDetails sx={{ px: 2, pt: 0, pb: 2 }}>
               <RichTextContent content={row.content} variant="body2" />

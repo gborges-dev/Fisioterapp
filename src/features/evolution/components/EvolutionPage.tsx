@@ -265,6 +265,7 @@ export function EvolutionPage() {
               maxHeight: { md: 'calc(100vh - 220px)' },
               overflowY: { md: 'auto' },
               pr: { md: 0.5 },
+              pt: { md: 0.25 },
             }}
           >
             <EvolutionEntriesAccordion
