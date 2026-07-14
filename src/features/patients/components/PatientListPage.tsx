@@ -3,6 +3,7 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined'
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
 import SearchIcon from '@mui/icons-material/Search'
+import TimelineOutlinedIcon from '@mui/icons-material/TimelineOutlined'
 import {
   Alert,
   Box,
@@ -27,6 +28,7 @@ import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
 import { toastError, toastSuccess } from '../../../components/toast'
 import { useSortState, useTableFilterSort } from '../../../hooks/useTableFilterSort'
 import { usePatientMutations, usePatients } from '../hooks/usePatients'
+import { patientTabPath } from '../patientTabs'
 import type { PatientRow } from '../services/patientsApi'
 
 type SortKey = 'full_name' | 'email' | 'phone'
@@ -174,12 +176,23 @@ export function PatientListPage() {
                       <Tooltip title="Fichas de avaliação">
                         <IconButton
                           component={Link}
-                          to={`/patients/${p.id}/evaluation-forms`}
+                          to={patientTabPath(p.id, 'fichas')}
                           size="small"
                           color="primary"
                           aria-label="Fichas de avaliação"
                         >
                           <AssignmentOutlinedIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Evolução">
+                        <IconButton
+                          component={Link}
+                          to={patientTabPath(p.id, 'evolucao')}
+                          size="small"
+                          color="primary"
+                          aria-label="Evolução"
+                        >
+                          <TimelineOutlinedIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Editar paciente">

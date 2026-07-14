@@ -60,4 +60,22 @@ export const queryKeys = {
         to,
       ] as const,
   },
+  finance: {
+    all: [workspaceId, 'finance'] as const,
+    list: (
+      from: string,
+      to: string,
+      patientId: string | null,
+      type: string | null,
+    ) =>
+      [
+        workspaceId,
+        'finance',
+        'list',
+        from,
+        to,
+        patientId ?? 'all',
+        type ?? 'all',
+      ] as const,
+  },
 }

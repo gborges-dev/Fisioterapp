@@ -386,6 +386,38 @@ export interface Database {
           created_at?: string
         }
       }
+      finance_entries: {
+        Row: {
+          id: string
+          workspace_id: string
+          patient_id: string | null
+          type: 'entrada' | 'saida'
+          amount: number
+          entry_date: string
+          description: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          patient_id?: string | null
+          type: 'entrada' | 'saida'
+          amount: number
+          entry_date?: string
+          description?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          patient_id?: string | null
+          type?: 'entrada' | 'saida'
+          amount?: number
+          entry_date?: string
+          description?: string
+          created_at?: string
+        }
+      }
     }
     Views: Record<string, never>
     Functions: {

@@ -8,7 +8,7 @@ import {
   Typography,
 } from '@mui/material'
 import { useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
 import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
@@ -16,6 +16,7 @@ import { useToast } from '../../../components/toast'
 import { validateRequiredFields } from '../../../lib/formFieldValidation'
 import type { FormFieldSchema } from '../../../types/database.types'
 import { usePatient } from '../../patients/hooks/usePatients'
+import { patientTabPath } from '../../patients/patientTabs'
 import { EvaluationFormFieldsRenderer } from './EvaluationFormFieldsRenderer'
 import {
   usePatientEvaluationForm,
@@ -91,6 +92,7 @@ function PatientEvaluationFormEditor({
   form: PatientEvaluationFormRow
 }) {
   const update = useUpdatePatientEvaluationForm(patientId)
+  const navigate = useNavigate()
   const { showSuccess, showError } = useToast()
 
   const fields = useMemo(() => parseEvaluationSchema(form.schema), [form.schema])
@@ -119,6 +121,7 @@ function PatientEvaluationFormEditor({
         evaluationDate,
       })
       showSuccess('Ficha atualizada.')
+      void navigate(patientTabPath(patientId, 'evolucao'))
     } catch (err) {
       showError(err instanceof Error ? err : new Error(String(err)))
     }

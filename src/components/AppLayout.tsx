@@ -5,6 +5,7 @@ import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined'
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined'
 import HealingOutlinedIcon from '@mui/icons-material/HealingOutlined'
 import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined'
+import PaymentsOutlinedIcon from '@mui/icons-material/PaymentsOutlined'
 import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline'
 import {
   AppBar,
@@ -37,6 +38,7 @@ const navItems = [
   { to: '/patients', label: 'Pacientes' },
   { to: '/evaluation-forms', label: 'Fichas de avaliação' },
   { to: '/forms', label: 'Formulários' },
+  { to: '/finance', label: 'Financeiro' },
   { to: '/reports', label: 'Relatórios' },
 ] as const
 
@@ -45,6 +47,7 @@ const bottomNavConfig = [
   { to: '/patients', label: 'Pacientes', icon: <PeopleOutlineIcon /> },
   { to: '/evaluation-forms', label: 'Fichas', icon: <AssignmentOutlinedIcon /> },
   { to: '/forms', label: 'Formulários', icon: <ArticleOutlinedIcon /> },
+  { to: '/finance', label: 'Financeiro', icon: <PaymentsOutlinedIcon /> },
   { to: '/reports', label: 'Relatórios', icon: <AssessmentOutlinedIcon /> },
 ] as const
 
@@ -53,6 +56,7 @@ function bottomNavValue(pathname: string): string {
   if (pathname.startsWith('/patients')) return '/patients'
   if (pathname.startsWith('/evaluation-forms')) return '/evaluation-forms'
   if (pathname.startsWith('/forms')) return '/forms'
+  if (pathname.startsWith('/finance')) return '/finance'
   if (pathname.startsWith('/reports')) return '/reports'
   return pathname
 }

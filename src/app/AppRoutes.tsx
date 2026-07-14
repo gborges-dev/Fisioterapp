@@ -4,6 +4,7 @@ import { AppLayout } from '../components/AppLayout'
 import { DashboardPage } from '../features/dashboard/components/DashboardPage'
 import { DocumentsPage } from '../features/documents/components/DocumentsPage'
 import { EvolutionPage } from '../features/evolution/components/EvolutionPage'
+import { FinancePage } from '../features/finance/components/FinancePage'
 import { FormEditorPage } from '../features/form-builder/components/FormEditorPage'
 import { FormsListPage } from '../features/form-builder/components/FormsListPage'
 import { PatientComparePage } from '../features/patients/components/PatientComparePage'
@@ -48,6 +49,7 @@ export function AppRoutes() {
           <Route path="new" element={<FormEditorPage />} />
           <Route path=":id/edit" element={<FormEditorPage />} />
         </Route>
+        <Route path="finance" element={<FinancePage />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

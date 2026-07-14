@@ -21,6 +21,7 @@ import { useToast } from '../../../components/toast'
 import { validateRequiredFields } from '../../../lib/formFieldValidation'
 import type { FormFieldSchema } from '../../../types/database.types'
 import { usePatient } from '../../patients/hooks/usePatients'
+import { patientTabPath } from '../../patients/patientTabs'
 import { EvaluationFormFieldsRenderer } from './EvaluationFormFieldsRenderer'
 import { useEvaluationFormTemplates } from '../hooks/useEvaluationFormTemplates'
 import { useCreatePatientEvaluationForm } from '../hooks/usePatientEvaluationForms'
@@ -75,7 +76,7 @@ export function PatientEvaluationFormCreatePage() {
     }
 
     try {
-      const row = await create.mutateAsync({
+      await create.mutateAsync({
         templateId: selectedTemplate.id,
         title: selectedTemplate.title,
         schema: fields,
@@ -83,7 +84,7 @@ export function PatientEvaluationFormCreatePage() {
         evaluationDate,
       })
       showSuccess('Ficha adicionada com sucesso.')
-      void navigate(`/patients/${patientId}/evaluation-forms/${row.id}`)
+      void navigate(patientTabPath(patientId, 'evolucao'))
     } catch (err) {
       showError(err instanceof Error ? err : new Error(String(err)))
     }
