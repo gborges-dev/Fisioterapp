@@ -1,14 +1,18 @@
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
 import SearchIcon from '@mui/icons-material/Search'
 import {
   Alert,
   Autocomplete,
   Box,
+  Button,
   Card,
   CardContent,
   Chip,
   CircularProgress,
   Grid,
   InputAdornment,
+  Menu,
+  MenuItem,
   Stack,
   Tab,
   Tabs,
@@ -27,6 +31,7 @@ import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
 import { useSortState, useTableFilterSort } from '../../../hooks/useTableFilterSort'
 import { useDashboardEvolutionOverview } from '../../dashboard/hooks/useDashboardEvolutionOverview'
 import type { PatientEvolutionOverviewItem } from '../../dashboard/services/dashboardApi'
+import { useFinanceEntries } from '../../finance/hooks/useFinance'
 import { usePatients } from '../../patients/hooks/usePatients'
 import type { PatientRow } from '../../patients/services/patientsApi'
 import {
@@ -35,6 +40,13 @@ import {
   useFormSubmissionsReport,
   usePatientEvolutionReport,
 } from '../hooks/useReportQueries'
+import {
+  buildDailyCashFlow,
+  formatEntryDate,
+  formatMoney,
+  summarizeCashFlow,
+} from '../utils/cashFlowAggregates'
+import { exportCashFlowCsv, exportCashFlowPdf } from '../utils/cashFlowExport'
 import { formatSubmissionAnswersSummary } from '../utils/formatSubmissionAnswers'
 import { useFormTemplates } from '../../form-builder/hooks/useFormTemplates'
 import type { FormTemplateRow } from '../../form-builder/types'
@@ -86,6 +98,13 @@ export function ReportsPage() {
   const [formFrom, setFormFrom] = useState('')
   const [formTo, setFormTo] = useState('')
 
+  const [cashFrom, setCashFrom] = useState(range.from)
+  const [cashTo, setCashTo] = useState(range.to)
+  const [cashPatient, setCashPatient] = useState<PatientRow | null>(null)
+  const [exportMenuAnchor, setExportMenuAnchor] = useState<null | HTMLElement>(
+    null,
+  )
+
   const { data: patients, isLoading: loadingPatients } = usePatients()
   const { data: formTemplates, isLoading: loadingFormTemplates } =
     useFormTemplates()
@@ -94,6 +113,31 @@ export function ReportsPage() {
     evoFrom,
     evoTo,
   )
+  const cashFlowReport = useFinanceEntries({
+    from: cashFrom,
+    to: cashTo,
+    patientId: cashPatient?.id ?? null,
+    type: null,
+  })
+  const cashFlowRows = cashFlowReport.data ?? []
+  const cashFlowTotals = useMemo(
+    () => summarizeCashFlow(cashFlowRows),
+    [cashFlowRows],
+  )
+  const cashFlowDaily = useMemo(
+    () => buildDailyCashFlow(cashFlowRows),
+    [cashFlowRows],
+  )
+  const cashExportMeta = useMemo(
+    () => ({
+      fromYmd: cashFrom,
+      toYmd: cashTo,
+      patientLabel: cashPatient?.full_name ?? 'Todos os pacientes',
+    }),
+    [cashFrom, cashTo, cashPatient],
+  )
+  const cashPeriodInvalid =
+    Boolean(cashFrom) && Boolean(cashTo) && cashFrom > cashTo
 
   const overview = useDashboardEvolutionOverview()
   const [overviewFilter, setOverviewFilter] = useState('')
@@ -187,6 +231,7 @@ export function ReportsPage() {
         <Tab label="Todos os pacientes" />
         <Tab label="Resumo da clínica" />
         <Tab label="Formulários respondidos" />
+        <Tab label="Fluxo de caixa" />
       </Tabs>
 
       {tab === 0 ? (
@@ -634,6 +679,237 @@ export function ReportsPage() {
               ))}
             </Grid>
           )}
+        </Box>
+      ) : null}
+
+      {tab === 4 ? (
+        <Box>
+          <Grid container spacing={2} sx={{ mb: 2 }} alignItems="center">
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <TextField
+                label="De"
+                type="date"
+                value={cashFrom}
+                onChange={(e) => setCashFrom(e.target.value)}
+                slotProps={{ inputLabel: { shrink: true } }}
+                fullWidth
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <TextField
+                label="Até"
+                type="date"
+                value={cashTo}
+                onChange={(e) => setCashTo(e.target.value)}
+                slotProps={{ inputLabel: { shrink: true } }}
+                fullWidth
+              />
+            </Grid>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Autocomplete
+                options={patients ?? []}
+                loading={loadingPatients}
+                value={cashPatient}
+                onChange={(_, v) => setCashPatient(v)}
+                getOptionLabel={(p) => p.full_name}
+                isOptionEqualToValue={(a, b) => a.id === b.id}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Paciente (opcional)"
+                    placeholder="Todos os pacientes"
+                  />
+                )}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, md: 2 }}>
+              <Button
+                variant="outlined"
+                fullWidth
+                endIcon={<ArrowDropDownIcon />}
+                disabled={cashFlowRows.length === 0 || cashPeriodInvalid}
+                onClick={(e) => setExportMenuAnchor(e.currentTarget)}
+              >
+                Exportar
+              </Button>
+              <Menu
+                anchorEl={exportMenuAnchor}
+                open={Boolean(exportMenuAnchor)}
+                onClose={() => setExportMenuAnchor(null)}
+              >
+                <MenuItem
+                  onClick={() => {
+                    exportCashFlowPdf(cashFlowRows, cashExportMeta)
+                    setExportMenuAnchor(null)
+                  }}
+                >
+                  PDF
+                </MenuItem>
+                <MenuItem
+                  onClick={() => {
+                    exportCashFlowCsv(cashFlowRows, cashExportMeta)
+                    setExportMenuAnchor(null)
+                  }}
+                >
+                  CSV
+                </MenuItem>
+              </Menu>
+            </Grid>
+          </Grid>
+
+          {cashPeriodInvalid ? (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              A data inicial não pode ser posterior à data final.
+            </Alert>
+          ) : null}
+
+          {cashFlowReport.isLoading ? <CircularProgress /> : null}
+          {cashFlowReport.isError ? (
+            <Alert severity="error">
+              {(cashFlowReport.error as Error).message}
+            </Alert>
+          ) : null}
+
+          {!cashFlowReport.isLoading &&
+          !cashFlowReport.isError &&
+          !cashPeriodInvalid ? (
+            <>
+              <Grid container spacing={2} sx={{ mb: 2 }}>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <Card variant="outlined">
+                    <CardContent>
+                      <Typography color="text.secondary" variant="body2">
+                        Total de entradas
+                      </Typography>
+                      <Typography
+                        variant="h5"
+                        sx={{ color: 'success.main', mt: 0.5 }}
+                      >
+                        {formatMoney(cashFlowTotals.entradas)}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <Card variant="outlined">
+                    <CardContent>
+                      <Typography color="text.secondary" variant="body2">
+                        Total de saídas
+                      </Typography>
+                      <Typography
+                        variant="h5"
+                        sx={{ color: 'error.main', mt: 0.5 }}
+                      >
+                        {formatMoney(cashFlowTotals.saidas)}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <Card variant="outlined">
+                    <CardContent>
+                      <Typography color="text.secondary" variant="body2">
+                        Saldo líquido
+                      </Typography>
+                      <Typography variant="h5" sx={{ mt: 0.5 }}>
+                        {formatMoney(cashFlowTotals.saldo)}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              </Grid>
+
+              {cashFlowDaily.length > 0 ? (
+                <Card variant="outlined" sx={{ mb: 2 }}>
+                  <CardContent>
+                    <Typography
+                      variant="subtitle1"
+                      fontWeight={600}
+                      gutterBottom
+                    >
+                      Movimento por dia no período
+                    </Typography>
+                    <BarChart
+                      height={280}
+                      margin={{ left: 48, right: 12, top: 8, bottom: 48 }}
+                      xAxis={[
+                        {
+                          scaleType: 'band',
+                          data: cashFlowDaily.map((p) => shortDate(p.date)),
+                          tickLabelStyle: {
+                            fontSize: 9,
+                            angle: -45,
+                            textAnchor: 'end',
+                          },
+                        },
+                      ]}
+                      series={[
+                        {
+                          data: cashFlowDaily.map((p) => p.entradas),
+                          label: 'Entradas',
+                          color: theme.palette.success.main,
+                        },
+                        {
+                          data: cashFlowDaily.map((p) => p.saidas),
+                          label: 'Saídas',
+                          color: theme.palette.error.main,
+                        },
+                      ]}
+                      grid={{ horizontal: true }}
+                    />
+                  </CardContent>
+                </Card>
+              ) : null}
+
+              {cashFlowRows.length === 0 ? (
+                <Typography color="text.secondary">
+                  Sem lançamentos financeiros neste período.
+                </Typography>
+              ) : (
+                <Grid container spacing={2}>
+                  {cashFlowRows.map((row) => (
+                    <Grid key={row.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                      <Card
+                        variant="outlined"
+                        sx={{ borderRadius: 2, height: '100%' }}
+                      >
+                        <CardContent>
+                          <Typography
+                            variant="body2"
+                            fontWeight={600}
+                            sx={{
+                              color:
+                                row.type === 'entrada'
+                                  ? 'success.main'
+                                  : 'error.main',
+                            }}
+                          >
+                            {row.type === 'entrada' ? 'Entrada' : 'Saída'}
+                          </Typography>
+                          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                            {formatMoney(row.amount)}
+                          </Typography>
+                          <Typography variant="body2" sx={{ mt: 0.5 }}>
+                            {row.description.trim() || '—'}
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ mt: 1 }}
+                          >
+                            {formatEntryDate(row.entry_date)}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {row.patients?.full_name?.trim() || 'Sem paciente'}
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+              )}
+            </>
+          ) : null}
         </Box>
       ) : null}
     </Box>
