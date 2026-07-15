@@ -1,73 +1,40 @@
-# React + TypeScript + Vite
+# Fisioterapp (front)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+SPA React + TypeScript + Vite. Consome a API Nest (`Fisioterapp-api`) via JWT — **não** usa mais o client Supabase para operações de domínio.
 
-Currently, two official plugins are available:
+## Setup
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+1. Suba a API conforme o README de `Fisioterapp-api` (migration SQL, `.env`, `seed:users`, `start:dev`).
+2. Neste projeto:
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+cp .env.example .env
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Variáveis
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+| Variável | Valor típico |
+|----------|----------------|
+| `VITE_API_URL` | `http://localhost:3000/api` |
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+`VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` **não são necessários** para login, pacientes, formulários, etc. O Storage continua no backend (service role).
+
+Opcional: `VITE_DEFAULT_WORKSPACE_ID` alinhado ao workspace seed (`00000000-0000-0000-0000-000000000001`).
+
+## Login
+
+1. Abra o app e faça login com as credenciais seed (definidas no `.env` da API).
+2. **Therapist** → entra direto no app clínico do próprio workspace.
+3. **Super admin** → redireciona para **Bases** (`/admin/bases`): listar, criar e **Entrar** numa base (define `X-Workspace-Id` no client).
+
+Formulários públicos: rota `/f/:token` (sem login).
+
+## Scripts
+
+| Comando | Descrição |
+|---------|-----------|
+| `npm run dev` | Dev server (Vite) |
+| `npm run build` | Build de produção |
+| `npm run preview` | Preview do build |
