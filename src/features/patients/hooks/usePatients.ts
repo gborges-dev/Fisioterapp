@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
+import { getActiveWorkspaceId, getToken } from '../../auth/authStorage'
+import { isApiConfigured } from '../../../lib/apiClient'
 import { queryKeys } from '../../../lib/queryKeys'
-import { DEFAULT_WORKSPACE_ID } from '../../../lib/workspace'
-import { isSupabaseConfigured } from '../../../lib/supabaseClient'
 import {
   createPatient,
   deletePatient,
@@ -15,15 +15,23 @@ import {
 
 export type NewPatientInput = Omit<PatientInsert, 'workspace_id'>
 
+function isPatientsReady() {
+  return (
+    isApiConfigured() &&
+    Boolean(getToken()) &&
+    Boolean(getActiveWorkspaceId())
+  )
+}
+
 export function usePatients() {
   return useQuery({
     queryKey: queryKeys.patients.all,
     queryFn: async () => {
-      const { data, error } = await listPatients(DEFAULT_WORKSPACE_ID)
+      const { data, error } = await listPatients()
       if (error) throw error
       return data
     },
-    enabled: isSupabaseConfigured(),
+    enabled: isPatientsReady(),
     staleTime: 30_000,
   })
 }
@@ -36,7 +44,7 @@ export function usePatient(id: string | undefined) {
       if (error) throw error
       return data
     },
-    enabled: Boolean(id) && isSupabaseConfigured(),
+    enabled: Boolean(id) && isPatientsReady(),
   })
 }
 
@@ -48,10 +56,7 @@ export function usePatientMutations() {
 
   const create = useMutation({
     mutationFn: async (payload: NewPatientInput) => {
-      const { data, error } = await createPatient({
-        ...payload,
-        workspace_id: DEFAULT_WORKSPACE_ID,
-      })
+      const { data, error } = await createPatient(payload)
       if (error) throw error
       return data
     },

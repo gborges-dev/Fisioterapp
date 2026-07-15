@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
+import { getActiveWorkspaceId, getToken } from '../../auth/authStorage'
+import { isApiConfigured } from '../../../lib/apiClient'
 import { queryKeys } from '../../../lib/queryKeys'
-import { DEFAULT_WORKSPACE_ID } from '../../../lib/workspace'
-import { isSupabaseConfigured } from '../../../lib/supabaseClient'
 import {
   createPatient,
   updatePatient,
@@ -12,6 +12,14 @@ import { getPatientHistory } from '../services/patientHistoryApi'
 import { getPatientSurgery } from '../services/patientSurgeryApi'
 import type { NewPatientInput } from './usePatients'
 
+function isPatientsReady() {
+  return (
+    isApiConfigured() &&
+    Boolean(getToken()) &&
+    Boolean(getActiveWorkspaceId())
+  )
+}
+
 export function usePatientHistory(patientId: string | undefined) {
   return useQuery({
     queryKey: queryKeys.patients.history(patientId ?? ''),
@@ -20,7 +28,7 @@ export function usePatientHistory(patientId: string | undefined) {
       if (error) throw error
       return data
     },
-    enabled: Boolean(patientId) && isSupabaseConfigured(),
+    enabled: Boolean(patientId) && isPatientsReady(),
   })
 }
 
@@ -32,7 +40,7 @@ export function usePatientSurgeryQuery(patientId: string | undefined) {
       if (error) throw error
       return data
     },
-    enabled: Boolean(patientId) && isSupabaseConfigured(),
+    enabled: Boolean(patientId) && isPatientsReady(),
   })
 }
 
@@ -54,10 +62,7 @@ export function useSavePatient() {
         | { mode: 'update'; patientId: string; patient: PatientUpdate },
     ) => {
       if (input.mode === 'create') {
-        const { data: p, error } = await createPatient({
-          ...input.patient,
-          workspace_id: DEFAULT_WORKSPACE_ID,
-        })
+        const { data: p, error } = await createPatient(input.patient)
         if (error) throw error
         if (!p) throw new Error('Paciente não criado')
         return { patientId: p.id }

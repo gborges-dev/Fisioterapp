@@ -1,35 +1,37 @@
-import { supabase } from '../../../lib/supabaseClient'
+import { apiRequest } from '../../../lib/apiClient'
 import type { Database } from '../../../types/database.types'
+import { getActiveWorkspaceId } from '../../auth/authStorage'
 
 export type PatientRow = Database['public']['Tables']['patients']['Row']
 export type PatientInsert = Database['public']['Tables']['patients']['Insert']
 export type PatientUpdate = Database['public']['Tables']['patients']['Update']
 
-export async function listPatients(workspaceId: string) {
-  return supabase
-    .from('patients')
-    .select('*')
-    .eq('workspace_id', workspaceId)
-    .order('created_at', { ascending: false })
+export async function listPatients(_workspaceId?: string) {
+  return apiRequest<PatientRow[]>('/patients')
 }
 
 export async function getPatient(id: string) {
-  return supabase.from('patients').select('*').eq('id', id).maybeSingle()
+  return apiRequest<PatientRow>(`/patients/${id}`)
 }
 
-export async function createPatient(payload: PatientInsert) {
-  return supabase.from('patients').insert(payload).select().single()
+export async function createPatient(
+  payload: Omit<PatientInsert, 'workspace_id'> & { workspace_id?: string },
+) {
+  const { workspace_id, ...body } = payload
+  return apiRequest<PatientRow>('/patients', {
+    method: 'POST',
+    body: JSON.stringify(body),
+    workspaceId: workspace_id ?? getActiveWorkspaceId(),
+  })
 }
 
 export async function updatePatient(id: string, payload: PatientUpdate) {
-  return supabase
-    .from('patients')
-    .update({ ...payload, updated_at: new Date().toISOString() })
-    .eq('id', id)
-    .select()
-    .single()
+  return apiRequest<PatientRow>(`/patients/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
 }
 
 export async function deletePatient(id: string) {
-  return supabase.from('patients').delete().eq('id', id)
+  return apiRequest<{ ok: boolean }>(`/patients/${id}`, { method: 'DELETE' })
 }

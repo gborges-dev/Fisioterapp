@@ -1,5 +1,6 @@
-import { supabase } from '../../../lib/supabaseClient'
+import { apiRequest } from '../../../lib/apiClient'
 import type { Database } from '../../../types/database.types'
+import { getActiveWorkspaceId } from '../../auth/authStorage'
 
 export type PatientHistoryRow =
   Database['public']['Tables']['patient_history']['Row']
@@ -9,24 +10,18 @@ export type PatientHistoryUpdate =
   Database['public']['Tables']['patient_history']['Update']
 
 export async function getPatientHistory(patientId: string) {
-  return supabase
-    .from('patient_history')
-    .select('*')
-    .eq('patient_id', patientId)
-    .maybeSingle()
+  return apiRequest<PatientHistoryRow | null>(
+    `/patients/${patientId}/history`,
+  )
 }
 
 export async function upsertPatientHistory(
   payload: PatientHistoryInsert,
 ): Promise<{ data: PatientHistoryRow | null; error: Error | null }> {
-  const row = {
-    ...payload,
-    updated_at: new Date().toISOString(),
-  }
-  const { data, error } = await supabase
-    .from('patient_history')
-    .upsert(row, { onConflict: 'patient_id' })
-    .select()
-    .single()
-  return { data, error: error as Error | null }
+  const { patient_id, workspace_id, ...body } = payload
+  return apiRequest<PatientHistoryRow>(`/patients/${patient_id}/history`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+    workspaceId: workspace_id ?? getActiveWorkspaceId(),
+  })
 }
