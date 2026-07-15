@@ -1,23 +1,19 @@
-import { Alert, AlertTitle, Link, Stack } from '@mui/material'
+import { Alert, AlertTitle, Stack } from '@mui/material'
 
-import { isSupabaseConfigured } from '../lib/supabaseClient'
+import { isApiConfigured } from '../lib/apiClient'
 
 export function SupabaseConfigAlert() {
-  if (isSupabaseConfigured()) return null
+  if (isApiConfigured()) return null
 
   return (
     <Alert severity="warning" sx={{ mb: 2 }}>
-      <AlertTitle>Supabase não configurado</AlertTitle>
+      <AlertTitle>API não configurada</AlertTitle>
       <Stack spacing={1}>
         <span>
-          Defina <code>VITE_SUPABASE_URL</code> e{' '}
-          <code>VITE_SUPABASE_ANON_KEY</code> num ficheiro <code>.env</code> e
-          aplique a migração em <code>supabase/migrations/</code> no painel
-          Supabase.
+          Defina <code>VITE_API_URL</code> num ficheiro <code>.env</code> (ex.:{' '}
+          <code>http://localhost:3000/api</code>) e reinicie o servidor de
+          desenvolvimento.
         </span>
-        <Link href="https://supabase.com/docs/guides/getting-started" target="_blank" rel="noreferrer">
-          Documentação Supabase
-        </Link>
       </Stack>
     </Alert>
   )

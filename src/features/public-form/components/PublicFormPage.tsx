@@ -24,7 +24,7 @@ import {
   serializeMultiselectAnswer,
 } from '../../../lib/formAnswers'
 import { validateRequiredFields } from '../../../lib/formFieldValidation'
-import { isSupabaseConfigured } from '../../../lib/supabaseClient'
+import { isApiConfigured } from '../../../lib/apiClient'
 import type { FormFieldSchema, Json } from '../../../types/database.types'
 import {
   fetchPublicFormByToken,
@@ -38,8 +38,12 @@ export function PublicFormPage() {
 
   const formQuery = useQuery({
     queryKey: queryKeys.publicForm(token ?? ''),
-    queryFn: () => fetchPublicFormByToken(token!),
-    enabled: Boolean(token) && isSupabaseConfigured(),
+    queryFn: async () => {
+      const { data, error } = await fetchPublicFormByToken(token!)
+      if (error) throw error
+      return data
+    },
+    enabled: Boolean(token) && isApiConfigured(),
   })
 
   const submit = useMutation({
@@ -80,7 +84,7 @@ export function PublicFormPage() {
     void submit.mutateAsync({ token, answers: obj as Json })
   }
 
-  if (!isSupabaseConfigured()) {
+  if (!isApiConfigured()) {
     return (
       <Box sx={{ p: 2 }}>
         <Alert severity="warning">Configuração em falta.</Alert>

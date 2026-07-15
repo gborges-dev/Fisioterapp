@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
+import { getActiveWorkspaceId, getToken } from '../../auth/authStorage'
+import { isApiConfigured } from '../../../lib/apiClient'
 import { queryKeys } from '../../../lib/queryKeys'
-import { DEFAULT_WORKSPACE_ID } from '../../../lib/workspace'
-import { isSupabaseConfigured } from '../../../lib/supabaseClient'
 import type { FormFieldSchema } from '../../../types/database.types'
 import {
   createFormLink,
@@ -13,15 +13,23 @@ import {
   updateFormTemplate,
 } from '../services/formsApi'
 
+function isApiReady() {
+  return (
+    isApiConfigured() &&
+    Boolean(getToken()) &&
+    Boolean(getActiveWorkspaceId())
+  )
+}
+
 export function useFormTemplates() {
   return useQuery({
     queryKey: queryKeys.forms.templates,
     queryFn: async () => {
-      const { data, error } = await listFormTemplates(DEFAULT_WORKSPACE_ID)
+      const { data, error } = await listFormTemplates()
       if (error) throw error
-      return data
+      return data ?? []
     },
-    enabled: isSupabaseConfigured(),
+    enabled: isApiReady(),
     staleTime: 30_000,
   })
 }
@@ -32,9 +40,10 @@ export function useFormTemplate(id: string | undefined) {
     queryFn: async () => {
       const { data, error } = await getFormTemplate(id!)
       if (error) throw error
+      if (!data) throw new Error('Formulário não encontrado.')
       return data
     },
-    enabled: Boolean(id) && isSupabaseConfigured(),
+    enabled: Boolean(id) && isApiReady(),
     staleTime: 30_000,
   })
 }
@@ -52,12 +61,15 @@ export function useFormTemplateMutations() {
       title: string
       schema: FormFieldSchema[]
     }) => {
+      const workspaceId = getActiveWorkspaceId()
+      if (!workspaceId) throw new Error('Workspace ativo em falta.')
       const { data, error } = await createFormTemplate(
-        DEFAULT_WORKSPACE_ID,
+        workspaceId,
         title,
         schema,
       )
       if (error) throw error
+      if (!data) throw new Error('Resposta vazia ao criar formulário.')
       return data
     },
     onSuccess: invalidate,
@@ -75,6 +87,7 @@ export function useFormTemplateMutations() {
     }) => {
       const { data, error } = await updateFormTemplate(id, title, schema)
       if (error) throw error
+      if (!data) throw new Error('Resposta vazia ao atualizar formulário.')
       return data
     },
     onSuccess: (_d, v) => {
@@ -87,11 +100,11 @@ export function useFormTemplateMutations() {
 
   const createLink = useMutation({
     mutationFn: async (formTemplateId: string) => {
-      const { data, error } = await createFormLink(
-        DEFAULT_WORKSPACE_ID,
-        formTemplateId,
-      )
+      const workspaceId = getActiveWorkspaceId()
+      if (!workspaceId) throw new Error('Workspace ativo em falta.')
+      const { data, error } = await createFormLink(workspaceId, formTemplateId)
       if (error) throw error
+      if (!data) throw new Error('Resposta vazia ao criar link.')
       return data
     },
     onSuccess: invalidate,

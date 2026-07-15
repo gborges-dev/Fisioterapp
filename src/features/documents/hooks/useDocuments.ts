@@ -1,16 +1,22 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { toastError, toastSuccess } from '../../../components/toast'
+import { getActiveWorkspaceId, getToken } from '../../auth/authStorage'
+import { isApiConfigured } from '../../../lib/apiClient'
 import { queryKeys } from '../../../lib/queryKeys'
-import { DEFAULT_WORKSPACE_ID } from '../../../lib/workspace'
-import { isSupabaseConfigured } from '../../../lib/supabaseClient'
 import {
   deletePatientDocument,
-  getPublicUrl,
-  insertDocumentMeta,
   listDocuments,
-  uploadPatientFile,
+  uploadPatientDocument,
 } from '../services/documentsApi'
+
+function isApiReady() {
+  return (
+    isApiConfigured() &&
+    Boolean(getToken()) &&
+    Boolean(getActiveWorkspaceId())
+  )
+}
 
 export function usePatientDocuments(patientId: string | undefined) {
   return useQuery({
@@ -20,7 +26,7 @@ export function usePatientDocuments(patientId: string | undefined) {
       if (error) throw error
       return data
     },
-    enabled: Boolean(patientId) && isSupabaseConfigured(),
+    enabled: Boolean(patientId) && isApiReady(),
   })
 }
 
@@ -28,18 +34,7 @@ export function useUploadDocument(patientId: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (file: File) => {
-      const path = await uploadPatientFile(
-        DEFAULT_WORKSPACE_ID,
-        patientId,
-        file,
-      )
-      const { data, error } = await insertDocumentMeta({
-        patient_id: patientId,
-        workspace_id: DEFAULT_WORKSPACE_ID,
-        storage_path: path,
-        file_name: file.name,
-        mime_type: file.type || null,
-      })
+      const { data, error } = await uploadPatientDocument(patientId, file)
       if (error) throw error
       return data
     },
@@ -58,14 +53,9 @@ export function useUploadDocument(patientId: string) {
 export function useDeleteDocument(patientId: string) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async ({
-      documentId,
-      storagePath,
-    }: {
-      documentId: string
-      storagePath: string
-    }) => {
-      await deletePatientDocument(documentId, storagePath)
+    mutationFn: async ({ documentId }: { documentId: string }) => {
+      const { error } = await deletePatientDocument(documentId)
+      if (error) throw error
     },
     onSuccess: () => {
       toastSuccess('Anexo eliminado.')
@@ -78,5 +68,3 @@ export function useDeleteDocument(patientId: string) {
     },
   })
 }
-
-export { getPublicUrl }

@@ -1,15 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { toastError, toastSuccess } from '../../../components/toast'
+import { getActiveWorkspaceId, getToken } from '../../auth/authStorage'
+import { isApiConfigured } from '../../../lib/apiClient'
 import { queryKeys } from '../../../lib/queryKeys'
-import { isSupabaseConfigured } from '../../../lib/supabaseClient'
-import { DEFAULT_WORKSPACE_ID } from '../../../lib/workspace'
 import {
   createFinanceEntry,
   deleteFinanceEntry,
   listFinanceEntries,
   updateFinanceEntry,
-  type FinanceEntryInsert,
   type FinanceEntryType,
   type FinanceEntryUpdate,
   type FinanceEntryWithPatient,
@@ -30,6 +29,14 @@ export type NewFinanceEntryInput = {
   patientId?: string | null
 }
 
+function isApiReady() {
+  return (
+    isApiConfigured() &&
+    Boolean(getToken()) &&
+    Boolean(getActiveWorkspaceId())
+  )
+}
+
 export function useFinanceEntries(params: FinanceListParams) {
   return useQuery({
     queryKey: queryKeys.finance.list(
@@ -40,7 +47,6 @@ export function useFinanceEntries(params: FinanceListParams) {
     ),
     queryFn: async () => {
       const { data, error } = await listFinanceEntries({
-        workspaceId: DEFAULT_WORKSPACE_ID,
         from: params.from,
         to: params.to,
         patientId: params.patientId,
@@ -49,7 +55,7 @@ export function useFinanceEntries(params: FinanceListParams) {
       if (error) throw error
       return (data ?? []) as FinanceEntryWithPatient[]
     },
-    enabled: isSupabaseConfigured() && Boolean(params.from && params.to),
+    enabled: isApiReady() && Boolean(params.from && params.to),
   })
 }
 
@@ -61,16 +67,15 @@ export function useFinanceMutations() {
 
   const create = useMutation({
     mutationFn: async (input: NewFinanceEntryInput) => {
-      const payload: FinanceEntryInsert = {
-        workspace_id: DEFAULT_WORKSPACE_ID,
+      const { data, error } = await createFinanceEntry({
         type: input.type,
         amount: input.amount,
         entry_date: input.entryDate,
         description: input.description.trim(),
         patient_id: input.patientId || null,
-      }
-      const { data, error } = await createFinanceEntry(payload)
+      })
       if (error) throw error
+      if (!data) throw new Error('Resposta vazia ao criar lançamento.')
       return data
     },
     onSuccess: () => {
@@ -96,6 +101,7 @@ export function useFinanceMutations() {
       }
       const { data, error } = await updateFinanceEntry(id, payload)
       if (error) throw error
+      if (!data) throw new Error('Resposta vazia ao atualizar lançamento.')
       return data
     },
     onSuccess: () => {

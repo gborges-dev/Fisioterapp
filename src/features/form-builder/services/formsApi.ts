@@ -1,16 +1,17 @@
-import { supabase } from '../../../lib/supabaseClient'
-import type { FormFieldSchema, Json } from '../../../types/database.types'
+import { apiRequest } from '../../../lib/apiClient'
+import type { Database, FormFieldSchema, Json } from '../../../types/database.types'
+import { getActiveWorkspaceId } from '../../auth/authStorage'
 
-export async function listFormTemplates(workspaceId: string) {
-  return supabase
-    .from('form_templates')
-    .select('*')
-    .eq('workspace_id', workspaceId)
-    .order('updated_at', { ascending: false })
+export type FormTemplateRow =
+  Database['public']['Tables']['form_templates']['Row']
+type FormLinkRow = Database['public']['Tables']['form_links']['Row']
+
+export async function listFormTemplates(_workspaceId?: string) {
+  return apiRequest<FormTemplateRow[]>('/form-templates')
 }
 
 export async function getFormTemplate(id: string) {
-  return supabase.from('form_templates').select('*').eq('id', id).maybeSingle()
+  return apiRequest<FormTemplateRow>(`/form-templates/${id}`)
 }
 
 export async function createFormTemplate(
@@ -18,15 +19,15 @@ export async function createFormTemplate(
   title: string,
   schema: FormFieldSchema[],
 ) {
-  return supabase
-    .from('form_templates')
-    .insert({
+  return apiRequest<FormTemplateRow>('/form-templates', {
+    method: 'POST',
+    body: JSON.stringify({
       workspace_id: workspaceId,
       title,
-      schema: schema as unknown as Json,
-    })
-    .select()
-    .single()
+      schema,
+    }),
+    workspaceId: workspaceId || getActiveWorkspaceId(),
+  })
 }
 
 export async function updateFormTemplate(
@@ -34,34 +35,30 @@ export async function updateFormTemplate(
   title: string,
   schema: FormFieldSchema[],
 ) {
-  return supabase
-    .from('form_templates')
-    .update({
-      title,
-      schema: schema as unknown as Json,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', id)
-    .select()
-    .single()
+  return apiRequest<FormTemplateRow>(`/form-templates/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ title, schema }),
+  })
 }
 
 export async function deleteFormTemplate(id: string) {
-  return supabase.from('form_templates').delete().eq('id', id)
+  return apiRequest<{ ok: boolean }>(`/form-templates/${id}`, {
+    method: 'DELETE',
+  })
 }
 
 export async function createFormLink(
   workspaceId: string,
   formTemplateId: string,
 ) {
-  return supabase
-    .from('form_links')
-    .insert({
+  return apiRequest<FormLinkRow>('/form-links', {
+    method: 'POST',
+    body: JSON.stringify({
       workspace_id: workspaceId,
       form_template_id: formTemplateId,
-    })
-    .select()
-    .single()
+    }),
+    workspaceId: workspaceId || getActiveWorkspaceId(),
+  })
 }
 
 export interface PublicFormPayload {
@@ -72,45 +69,37 @@ export interface PublicFormPayload {
   schema: FormFieldSchema[]
 }
 
-export async function fetchPublicFormByToken(
-  token: string,
-): Promise<PublicFormPayload | null> {
-  const { data, error } = await supabase
-    .from('form_links')
-    .select(
-      `
-      id,
-      public_token,
-      form_template_id,
-      form_templates (
-        id,
-        title,
-        schema
-      )
-    `,
-    )
-    .eq('public_token', token)
-    .maybeSingle()
-
-  if (error) throw error
-  if (!data) return null
-
-  const tpl = data.form_templates as unknown as {
+type PublicFormResponse = {
+  link: {
+    id: string
+    public_token: string
+  }
+  template: {
     id: string
     title: string
     schema: Json
-  } | null
+  }
+}
 
-  if (!tpl) return null
+export async function fetchPublicFormByToken(token: string) {
+  const result = await apiRequest<PublicFormResponse>(
+    `/public/forms/${token}`,
+    { auth: false },
+  )
+  if (result.error || !result.data) {
+    return { data: null as PublicFormPayload | null, error: result.error }
+  }
 
-  const schema = parseFormSchema(tpl.schema)
-
+  const { link, template } = result.data
   return {
-    linkId: data.id,
-    publicToken: data.public_token,
-    templateId: tpl.id,
-    title: tpl.title,
-    schema,
+    data: {
+      linkId: link.id,
+      publicToken: link.public_token,
+      templateId: template.id,
+      title: template.title,
+      schema: parseFormSchema(template.schema),
+    } satisfies PublicFormPayload,
+    error: null,
   }
 }
 
@@ -141,8 +130,9 @@ export function parseFormSchema(raw: Json): FormFieldSchema[] {
 }
 
 export async function submitPublicForm(token: string, answers: Json) {
-  return supabase.rpc('submit_form_response', {
-    p_token: token,
-    p_answers: answers,
+  return apiRequest<{ id: string }>(`/public/forms/${token}/submit`, {
+    method: 'POST',
+    body: JSON.stringify({ answers }),
+    auth: false,
   })
 }

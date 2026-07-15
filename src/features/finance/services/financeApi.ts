@@ -1,5 +1,6 @@
-import { supabase } from '../../../lib/supabaseClient'
+import { apiRequest } from '../../../lib/apiClient'
 import type { Database } from '../../../types/database.types'
+import { getActiveWorkspaceId } from '../../auth/authStorage'
 
 export type FinanceEntryRow = Database['public']['Tables']['finance_entries']['Row']
 export type FinanceEntryInsert =
@@ -14,7 +15,7 @@ export type FinanceEntryWithPatient = FinanceEntryRow & {
 }
 
 export type ListFinanceFilters = {
-  workspaceId: string
+  workspaceId?: string
   from: string
   to: string
   patientId?: string | null
@@ -22,39 +23,52 @@ export type ListFinanceFilters = {
 }
 
 export function listFinanceEntries(filters: ListFinanceFilters) {
-  let query = supabase
-    .from('finance_entries')
-    .select('*, patients(full_name)')
-    .eq('workspace_id', filters.workspaceId)
-    .gte('entry_date', filters.from)
-    .lte('entry_date', filters.to)
-    .order('entry_date', { ascending: false })
-    .order('created_at', { ascending: false })
+  const qs = new URLSearchParams({
+    from: filters.from,
+    to: filters.to,
+  })
+  if (filters.patientId) qs.set('patientId', filters.patientId)
+  if (filters.type) qs.set('type', filters.type)
 
-  if (filters.patientId) {
-    query = query.eq('patient_id', filters.patientId)
-  }
-
-  if (filters.type) {
-    query = query.eq('type', filters.type)
-  }
-
-  return query
+  return apiRequest<FinanceEntryWithPatient[]>(`/finance-entries?${qs}`, {
+    workspaceId: filters.workspaceId ?? getActiveWorkspaceId(),
+  })
 }
 
-export function createFinanceEntry(payload: FinanceEntryInsert) {
-  return supabase.from('finance_entries').insert(payload).select().single()
+export function createFinanceEntry(
+  payload: Omit<FinanceEntryInsert, 'workspace_id'> & { workspace_id?: string },
+) {
+  const { workspace_id, ...body } = payload
+  return apiRequest<FinanceEntryRow>('/finance-entries', {
+    method: 'POST',
+    body: JSON.stringify({
+      ...body,
+      amount:
+        typeof body.amount === 'string' ? Number(body.amount) : body.amount,
+      workspace_id,
+    }),
+    workspaceId: workspace_id ?? getActiveWorkspaceId(),
+  })
 }
 
 export function updateFinanceEntry(id: string, payload: FinanceEntryUpdate) {
-  return supabase
-    .from('finance_entries')
-    .update(payload)
-    .eq('id', id)
-    .select()
-    .single()
+  const body = {
+    ...payload,
+    amount:
+      payload.amount === undefined
+        ? undefined
+        : typeof payload.amount === 'string'
+          ? Number(payload.amount)
+          : payload.amount,
+  }
+  return apiRequest<FinanceEntryRow>(`/finance-entries/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  })
 }
 
 export function deleteFinanceEntry(id: string) {
-  return supabase.from('finance_entries').delete().eq('id', id)
+  return apiRequest<{ ok: boolean }>(`/finance-entries/${id}`, {
+    method: 'DELETE',
+  })
 }

@@ -1,14 +1,22 @@
 import { useQuery } from '@tanstack/react-query'
 
+import { getActiveWorkspaceId, getToken } from '../../auth/authStorage'
+import { isApiConfigured } from '../../../lib/apiClient'
 import { queryKeys } from '../../../lib/queryKeys'
-import { DEFAULT_WORKSPACE_ID } from '../../../lib/workspace'
-import { isSupabaseConfigured } from '../../../lib/supabaseClient'
 import {
   fetchClinicPeriodSummary,
   fetchEvolutionDailyInRange,
   fetchFormSubmissionsReport,
   listEvolutionInDateRange,
 } from '../services/reportsApi'
+
+function isApiReady() {
+  return (
+    isApiConfigured() &&
+    Boolean(getToken()) &&
+    Boolean(getActiveWorkspaceId())
+  )
+}
 
 export function usePatientEvolutionReport(
   patientId: string | null,
@@ -35,33 +43,47 @@ export function usePatientEvolutionReport(
       Boolean(fromYmd) &&
       Boolean(toYmd) &&
       fromYmd <= toYmd &&
-      isSupabaseConfigured(),
+      isApiReady(),
   })
 }
 
 export function useClinicSummary(fromYmd: string, toYmd: string) {
   return useQuery({
     queryKey: queryKeys.reports.clinicSummary(fromYmd, toYmd),
-    queryFn: () =>
-      fetchClinicPeriodSummary(DEFAULT_WORKSPACE_ID, fromYmd, toYmd),
+    queryFn: async () => {
+      const { data, error } = await fetchClinicPeriodSummary(
+        undefined,
+        fromYmd,
+        toYmd,
+      )
+      if (error) throw error
+      return data
+    },
     enabled:
       Boolean(fromYmd) &&
       Boolean(toYmd) &&
       fromYmd <= toYmd &&
-      isSupabaseConfigured(),
+      isApiReady(),
   })
 }
 
 export function useClinicEvolutionDaily(fromYmd: string, toYmd: string) {
   return useQuery({
     queryKey: queryKeys.reports.clinicEvolutionDaily(fromYmd, toYmd),
-    queryFn: () =>
-      fetchEvolutionDailyInRange(DEFAULT_WORKSPACE_ID, fromYmd, toYmd),
+    queryFn: async () => {
+      const { data, error } = await fetchEvolutionDailyInRange(
+        undefined,
+        fromYmd,
+        toYmd,
+      )
+      if (error) throw error
+      return data
+    },
     enabled:
       Boolean(fromYmd) &&
       Boolean(toYmd) &&
       fromYmd <= toYmd &&
-      isSupabaseConfigured(),
+      isApiReady(),
   })
 }
 
@@ -87,17 +109,20 @@ export function useFormSubmissionsReport(
       fromKey,
       toKey,
     ),
-    queryFn: () =>
-      fetchFormSubmissionsReport(templateId!, {
+    queryFn: async () => {
+      const { data, error } = await fetchFormSubmissionsReport(templateId!, {
         patientId: patientId || undefined,
         fromYmd: hasFullPeriod ? fromYmd : undefined,
         toYmd: hasFullPeriod ? toYmd : undefined,
-      }),
+      })
+      if (error) throw error
+      return data
+    },
     enabled:
       Boolean(templateId) &&
       !partialPeriod &&
       !invalidRange &&
       (!hasFrom || hasFullPeriod) &&
-      isSupabaseConfigured(),
+      isApiReady(),
   })
 }

@@ -54,9 +54,10 @@ export function PatientEvaluationFormsPanel({
     setFormToDelete(form)
     setLoadingCount(true)
     try {
-      const { count, error: countError } = await countEvolutionEntriesByFormId(form.id)
+      const { data, error: countError } =
+        await countEvolutionEntriesByFormId(form.id)
       if (countError) throw countError
-      setEvolutionCount(count ?? 0)
+      setEvolutionCount(data?.count ?? 0)
     } catch {
       setEvolutionCount(0)
     } finally {

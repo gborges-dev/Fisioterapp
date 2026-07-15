@@ -1,12 +1,25 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { toastError, toastSuccess } from '../../../components/toast'
+import { getActiveWorkspaceId, getToken } from '../../auth/authStorage'
+import { isApiConfigured } from '../../../lib/apiClient'
 import { queryKeys } from '../../../lib/queryKeys'
-import { DEFAULT_WORKSPACE_ID } from '../../../lib/workspace'
-import { isSupabaseConfigured } from '../../../lib/supabaseClient'
-import { createEvolution, deleteEvolutionEntry, listEvolution, updateEvolutionEntry } from '../services/evolutionApi'
+import {
+  createEvolution,
+  deleteEvolutionEntry,
+  listEvolution,
+  updateEvolutionEntry,
+} from '../services/evolutionApi'
 
 const LIST_STALE_MS = 30_000
+
+function isApiReady() {
+  return (
+    isApiConfigured() &&
+    Boolean(getToken()) &&
+    Boolean(getActiveWorkspaceId())
+  )
+}
 
 export function useEvolutionEntries(patientId: string | undefined) {
   return useQuery({
@@ -14,9 +27,9 @@ export function useEvolutionEntries(patientId: string | undefined) {
     queryFn: async () => {
       const { data, error } = await listEvolution(patientId!)
       if (error) throw error
-      return data
+      return data ?? []
     },
-    enabled: Boolean(patientId) && isSupabaseConfigured(),
+    enabled: Boolean(patientId) && isApiReady(),
     staleTime: LIST_STALE_MS,
   })
 }
@@ -35,7 +48,6 @@ export function useCreateEvolution(patientId: string) {
     }) => {
       const { data, error } = await createEvolution({
         patient_id: patientId,
-        workspace_id: DEFAULT_WORKSPACE_ID,
         patient_evaluation_form_id: patientEvaluationFormId,
         content,
         entry_date: entryDate,

@@ -1,9 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { toastError, toastSuccess } from '../../../components/toast'
+import { getActiveWorkspaceId, getToken } from '../../auth/authStorage'
+import { isApiConfigured } from '../../../lib/apiClient'
 import { queryKeys } from '../../../lib/queryKeys'
-import { DEFAULT_WORKSPACE_ID } from '../../../lib/workspace'
-import { isSupabaseConfigured } from '../../../lib/supabaseClient'
 import type { FormFieldSchema, Json } from '../../../types/database.types'
 import { deleteEvolutionEntriesByFormId } from '../../evolution/services/evolutionApi'
 import {
@@ -16,6 +16,14 @@ import {
 
 const LIST_STALE_MS = 30_000
 
+function isApiReady() {
+  return (
+    isApiConfigured() &&
+    Boolean(getToken()) &&
+    Boolean(getActiveWorkspaceId())
+  )
+}
+
 export function usePatientEvaluationForms(patientId: string | undefined) {
   return useQuery({
     queryKey: queryKeys.evaluationForms.byPatient(patientId ?? ''),
@@ -24,7 +32,7 @@ export function usePatientEvaluationForms(patientId: string | undefined) {
       if (error) throw error
       return data
     },
-    enabled: Boolean(patientId) && isSupabaseConfigured(),
+    enabled: Boolean(patientId) && isApiReady(),
     staleTime: LIST_STALE_MS,
   })
 }
@@ -40,10 +48,7 @@ export function usePatientEvaluationForm(
       if (error) throw error
       return data
     },
-    enabled:
-      Boolean(patientId) &&
-      Boolean(formId) &&
-      isSupabaseConfigured(),
+    enabled: Boolean(patientId) && Boolean(formId) && isApiReady(),
     staleTime: LIST_STALE_MS,
   })
 }
@@ -66,7 +71,6 @@ export function useCreatePatientEvaluationForm(patientId: string) {
     }) => {
       const { data, error } = await createPatientEvaluationForm({
         patient_id: patientId,
-        workspace_id: DEFAULT_WORKSPACE_ID,
         template_id: templateId,
         title,
         schema: schema as unknown as Json,

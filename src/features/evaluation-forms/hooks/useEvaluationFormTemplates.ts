@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
+import { getActiveWorkspaceId, getToken } from '../../auth/authStorage'
+import { isApiConfigured } from '../../../lib/apiClient'
 import { queryKeys } from '../../../lib/queryKeys'
-import { DEFAULT_WORKSPACE_ID } from '../../../lib/workspace'
-import { isSupabaseConfigured } from '../../../lib/supabaseClient'
 import type { FormFieldSchema } from '../../../types/database.types'
 import {
   createEvaluationFormTemplate,
@@ -12,17 +12,23 @@ import {
   updateEvaluationFormTemplate,
 } from '../services/evaluationFormsApi'
 
+function isApiReady() {
+  return (
+    isApiConfigured() &&
+    Boolean(getToken()) &&
+    Boolean(getActiveWorkspaceId())
+  )
+}
+
 export function useEvaluationFormTemplates() {
   return useQuery({
     queryKey: queryKeys.evaluationForms.templates,
     queryFn: async () => {
-      const { data, error } = await listEvaluationFormTemplates(
-        DEFAULT_WORKSPACE_ID,
-      )
+      const { data, error } = await listEvaluationFormTemplates()
       if (error) throw error
-      return data
+      return data ?? []
     },
-    enabled: isSupabaseConfigured(),
+    enabled: isApiReady(),
     staleTime: 30_000,
   })
 }
@@ -33,9 +39,10 @@ export function useEvaluationFormTemplate(id: string | undefined) {
     queryFn: async () => {
       const { data, error } = await getEvaluationFormTemplate(id!)
       if (error) throw error
+      if (!data) throw new Error('Modelo não encontrado.')
       return data
     },
-    enabled: Boolean(id) && isSupabaseConfigured(),
+    enabled: Boolean(id) && isApiReady(),
     staleTime: 30_000,
   })
 }
@@ -57,13 +64,16 @@ export function useEvaluationFormTemplateMutations() {
       description: string | null
       schema: FormFieldSchema[]
     }) => {
+      const workspaceId = getActiveWorkspaceId()
+      if (!workspaceId) throw new Error('Workspace ativo em falta.')
       const { data, error } = await createEvaluationFormTemplate(
-        DEFAULT_WORKSPACE_ID,
+        workspaceId,
         title,
         description,
         schema,
       )
       if (error) throw error
+      if (!data) throw new Error('Resposta vazia ao criar modelo.')
       return data
     },
     onSuccess: invalidate,
@@ -88,6 +98,7 @@ export function useEvaluationFormTemplateMutations() {
         schema,
       )
       if (error) throw error
+      if (!data) throw new Error('Resposta vazia ao atualizar modelo.')
       return data
     },
     onSuccess: (_d, v) => {

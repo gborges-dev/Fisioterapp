@@ -52,12 +52,12 @@ export function FormEditorPage() {
   if (!isNew && isError) {
     return <Alert severity="error">{(error as Error).message}</Alert>
   }
-  if (!isNew && !existing) {
-    return <Alert severity="warning">Formulário não encontrado.</Alert>
-  }
-
   if (isNew) {
     return <FormEditorFields key="new" initial={null} />
+  }
+
+  if (!existing) {
+    return <Alert severity="warning">Formulário não encontrado.</Alert>
   }
 
   return (

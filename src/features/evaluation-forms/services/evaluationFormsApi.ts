@@ -1,23 +1,23 @@
-import { supabase } from '../../../lib/supabaseClient'
+import { apiRequest } from '../../../lib/apiClient'
 import type { Database, FormFieldSchema, Json } from '../../../types/database.types'
+import { getActiveWorkspaceId } from '../../auth/authStorage'
 import { parseFormSchema } from '../../form-builder/services/formsApi'
+
+type EvaluationFormTemplateRow =
+  Database['public']['Tables']['evaluation_form_templates']['Row']
+type PatientEvaluationFormRow =
+  Database['public']['Tables']['patient_evaluation_forms']['Row']
 export type PatientEvaluationFormInsert =
   Database['public']['Tables']['patient_evaluation_forms']['Insert']
 
-export async function listEvaluationFormTemplates(workspaceId: string) {
-  return supabase
-    .from('evaluation_form_templates')
-    .select('*')
-    .eq('workspace_id', workspaceId)
-    .order('updated_at', { ascending: false })
+export async function listEvaluationFormTemplates(_workspaceId?: string) {
+  return apiRequest<EvaluationFormTemplateRow[]>('/evaluation-form-templates')
 }
 
 export async function getEvaluationFormTemplate(id: string) {
-  return supabase
-    .from('evaluation_form_templates')
-    .select('*')
-    .eq('id', id)
-    .maybeSingle()
+  return apiRequest<EvaluationFormTemplateRow>(
+    `/evaluation-form-templates/${id}`,
+  )
 }
 
 export async function createEvaluationFormTemplate(
@@ -26,16 +26,16 @@ export async function createEvaluationFormTemplate(
   description: string | null,
   schema: FormFieldSchema[],
 ) {
-  return supabase
-    .from('evaluation_form_templates')
-    .insert({
+  return apiRequest<EvaluationFormTemplateRow>('/evaluation-form-templates', {
+    method: 'POST',
+    body: JSON.stringify({
       workspace_id: workspaceId,
       title,
       description,
-      schema: schema as unknown as Json,
-    })
-    .select()
-    .single()
+      schema,
+    }),
+    workspaceId: workspaceId || getActiveWorkspaceId(),
+  })
 }
 
 export async function updateEvaluationFormTemplate(
@@ -44,48 +44,47 @@ export async function updateEvaluationFormTemplate(
   description: string | null,
   schema: FormFieldSchema[],
 ) {
-  return supabase
-    .from('evaluation_form_templates')
-    .update({
-      title,
-      description,
-      schema: schema as unknown as Json,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', id)
-    .select()
-    .single()
+  return apiRequest<EvaluationFormTemplateRow>(
+    `/evaluation-form-templates/${id}`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ title, description, schema }),
+    },
+  )
 }
 
 export async function deleteEvaluationFormTemplate(id: string) {
-  return supabase.from('evaluation_form_templates').delete().eq('id', id)
+  return apiRequest<{ ok: boolean }>(`/evaluation-form-templates/${id}`, {
+    method: 'DELETE',
+  })
 }
 
 export async function listPatientEvaluationForms(patientId: string) {
-  return supabase
-    .from('patient_evaluation_forms')
-    .select('*')
-    .eq('patient_id', patientId)
-    .order('evaluation_date', { ascending: false })
-    .order('created_at', { ascending: false })
+  return apiRequest<PatientEvaluationFormRow[]>(
+    `/patients/${patientId}/evaluation-forms`,
+  )
 }
 
 export async function getPatientEvaluationForm(id: string) {
-  return supabase
-    .from('patient_evaluation_forms')
-    .select('*')
-    .eq('id', id)
-    .maybeSingle()
+  return apiRequest<PatientEvaluationFormRow>(
+    `/patient-evaluation-forms/${id}`,
+  )
 }
 
 export async function createPatientEvaluationForm(
-  payload: PatientEvaluationFormInsert,
+  payload: Omit<PatientEvaluationFormInsert, 'workspace_id'> & {
+    workspace_id?: string
+  },
 ) {
-  return supabase
-    .from('patient_evaluation_forms')
-    .insert(payload)
-    .select()
-    .single()
+  const { patient_id, workspace_id, ...body } = payload
+  return apiRequest<PatientEvaluationFormRow>(
+    `/patients/${patient_id}/evaluation-forms`,
+    {
+      method: 'POST',
+      body: JSON.stringify(body),
+      workspaceId: workspace_id ?? getActiveWorkspaceId(),
+    },
+  )
 }
 
 export async function updatePatientEvaluationForm(
@@ -96,26 +95,26 @@ export async function updatePatientEvaluationForm(
     updated_at?: string
   },
 ) {
-  return supabase
-    .from('patient_evaluation_forms')
-    .update({
-      ...patch,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', id)
-    .select()
-    .single()
+  const { updated_at: _ignored, ...body } = patch
+  return apiRequest<PatientEvaluationFormRow>(
+    `/patient-evaluation-forms/${id}`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    },
+  )
 }
 
 export async function deletePatientEvaluationForm(id: string) {
-  return supabase.from('patient_evaluation_forms').delete().eq('id', id)
+  return apiRequest<{ ok: boolean }>(`/patient-evaluation-forms/${id}`, {
+    method: 'DELETE',
+  })
 }
 
 export async function countEvolutionEntriesByFormId(formId: string) {
-  return supabase
-    .from('evolution_entries')
-    .select('id', { count: 'exact', head: true })
-    .eq('patient_evaluation_form_id', formId)
+  return apiRequest<{ count: number }>(
+    `/patient-evaluation-forms/${formId}/evolution-count`,
+  )
 }
 
 export function parseEvaluationSchema(raw: Json): FormFieldSchema[] {

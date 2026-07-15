@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 
+import { getActiveWorkspaceId, getToken } from '../../auth/authStorage'
+import { isApiConfigured } from '../../../lib/apiClient'
 import { queryKeys } from '../../../lib/queryKeys'
-import { DEFAULT_WORKSPACE_ID } from '../../../lib/workspace'
-import { isSupabaseConfigured } from '../../../lib/supabaseClient'
 import {
   fetchEvolutionDailySeries,
   fetchSubmissionsDailySeries,
@@ -10,19 +10,35 @@ import {
 
 const DAYS = 14
 
+function isApiReady() {
+  return (
+    isApiConfigured() &&
+    Boolean(getToken()) &&
+    Boolean(getActiveWorkspaceId())
+  )
+}
+
 export function useDashboardEvolutionDaily() {
   return useQuery({
     queryKey: queryKeys.dashboard.evolutionDaily(DAYS),
-    queryFn: () => fetchEvolutionDailySeries(DEFAULT_WORKSPACE_ID, DAYS),
-    enabled: isSupabaseConfigured(),
+    queryFn: async () => {
+      const { data, error } = await fetchEvolutionDailySeries(undefined, DAYS)
+      if (error) throw error
+      return data
+    },
+    enabled: isApiReady(),
   })
 }
 
 export function useDashboardSubmissionsDaily() {
   return useQuery({
     queryKey: queryKeys.dashboard.submissionsDaily(DAYS),
-    queryFn: () => fetchSubmissionsDailySeries(DEFAULT_WORKSPACE_ID, DAYS),
-    enabled: isSupabaseConfigured(),
+    queryFn: async () => {
+      const { data, error } = await fetchSubmissionsDailySeries(undefined, DAYS)
+      if (error) throw error
+      return data
+    },
+    enabled: isApiReady(),
   })
 }
 

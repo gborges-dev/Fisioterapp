@@ -21,13 +21,16 @@ import { ListPageSkeleton } from '../../../components/ListPageSkeleton'
 import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
 import { toastError, toastSuccess } from '../../../components/toast'
 import {
-  getPublicUrl,
   useDeleteDocument,
   usePatientDocuments,
   useUploadDocument,
 } from '../hooks/useDocuments'
 import { downloadDocumentFile } from '../services/documentsApi'
 import type { DocumentRow } from '../services/documentsApi'
+
+function documentUrl(doc: DocumentRow) {
+  return doc.public_url ?? ''
+}
 
 export function DocumentsPanel({ patientId }: { patientId: string }) {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -53,7 +56,8 @@ export function DocumentsPanel({ patientId }: { patientId: string }) {
   const handleDownload = async (doc: DocumentRow) => {
     setDownloadingId(doc.id)
     try {
-      const url = getPublicUrl(doc.storage_path)
+      const url = documentUrl(doc)
+      if (!url) throw new Error('URL do documento em falta.')
       await downloadDocumentFile(url, doc.file_name)
       toastSuccess('Ficheiro transferido.')
     } catch (e) {
@@ -68,7 +72,6 @@ export function DocumentsPanel({ patientId }: { patientId: string }) {
     try {
       await remove.mutateAsync({
         documentId: docToDelete.id,
-        storagePath: docToDelete.storage_path,
       })
       setDocToDelete(null)
     } catch {
@@ -148,7 +151,7 @@ export function DocumentsPanel({ patientId }: { patientId: string }) {
                   sx={{ fontWeight: 600, wordBreak: 'break-word' }}
                 >
                   <Link
-                    href={getPublicUrl(doc.storage_path)}
+                    href={documentUrl(doc) || undefined}
                     target="_blank"
                     rel="noreferrer"
                   >
