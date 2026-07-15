@@ -17,7 +17,7 @@ import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
-import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
+import { ApiConfigAlert } from '../../../components/ApiConfigAlert'
 import { useToast } from '../../../components/toast'
 import { isOptionFieldType, validateOptionFields } from '../../../lib/formFieldValidation'
 import type { FormFieldSchema } from '../../../types/database.types'
@@ -153,7 +153,7 @@ function TemplateEditorFields({
       <Typography variant="h4" component="h2" gutterBottom>
         {isNew ? 'Novo modelo de ficha' : 'Editar modelo de ficha'}
       </Typography>
-      <SupabaseConfigAlert />
+      <ApiConfigAlert />
       {err ? (
         <Alert severity="error" sx={{ mb: 2 }}>
           {(err as Error).message}

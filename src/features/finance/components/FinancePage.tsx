@@ -32,7 +32,7 @@ import { ConfirmDeleteDialog } from '../../../components/ConfirmDeleteDialog'
 import { ListCard } from '../../../components/ListCard'
 import { ListPageSkeleton } from '../../../components/ListPageSkeleton'
 import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
-import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
+import { ApiConfigAlert } from '../../../components/ApiConfigAlert'
 import { usePatients } from '../../patients/hooks/usePatients'
 import type { PatientRow } from '../../patients/services/patientsApi'
 import {
@@ -242,7 +242,7 @@ export function FinancePage() {
         </Button>
       </Box>
 
-      <SupabaseConfigAlert />
+      <ApiConfigAlert />
 
       <Grid container spacing={2} sx={{ mb: 2 }}>
         <Grid size={{ xs: 12, sm: 6 }}>

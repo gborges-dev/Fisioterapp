@@ -16,7 +16,7 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
-import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
+import { ApiConfigAlert } from '../../../components/ApiConfigAlert'
 import { useToast } from '../../../components/toast'
 import { validateRequiredFields } from '../../../lib/formFieldValidation'
 import type { FormFieldSchema } from '../../../types/database.types'
@@ -115,7 +115,7 @@ export function PatientEvaluationFormCreatePage() {
       <Typography variant="h4" component="h2" gutterBottom>
         Adicionar ficha de avaliação
       </Typography>
-      <SupabaseConfigAlert />
+      <ApiConfigAlert />
 
       {loadingTemplates ? <CircularProgress /> : null}
       {templates && templates.length === 0 ? (

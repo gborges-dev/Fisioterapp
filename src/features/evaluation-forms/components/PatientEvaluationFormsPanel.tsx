@@ -17,7 +17,7 @@ import { Link } from 'react-router-dom'
 import { ConfirmDeleteDialog } from '../../../components/ConfirmDeleteDialog'
 import { ListCard } from '../../../components/ListCard'
 import { ListPageSkeleton } from '../../../components/ListPageSkeleton'
-import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
+import { ApiConfigAlert } from '../../../components/ApiConfigAlert'
 import {
   useDeletePatientEvaluationForm,
   usePatientEvaluationForms,
@@ -102,7 +102,7 @@ export function PatientEvaluationFormsPanel({
         </Button>
       </Stack>
 
-      <SupabaseConfigAlert />
+      <ApiConfigAlert />
 
       {isLoading ? <ListPageSkeleton /> : null}
       {isError ? (

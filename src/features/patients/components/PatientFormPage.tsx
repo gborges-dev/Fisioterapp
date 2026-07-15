@@ -17,7 +17,7 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
-import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
+import { ApiConfigAlert } from '../../../components/ApiConfigAlert'
 import { useToast } from '../../../components/toast'
 import { useSavePatient } from '../hooks/usePatientFicha'
 import { usePatient } from '../hooks/usePatients'
@@ -149,7 +149,7 @@ function PatientFormFields({
       <Typography variant="h4" component="h2" gutterBottom>
         {isEdit ? 'Editar paciente' : 'Novo paciente'}
       </Typography>
-      <SupabaseConfigAlert />
+      <ApiConfigAlert />
       {err ? (
         <Alert severity="error" sx={{ mb: 2 }}>
           {(err as Error).message}

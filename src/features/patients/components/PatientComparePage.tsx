@@ -13,7 +13,7 @@ import { Link, useParams } from 'react-router-dom'
 
 import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
 import { RichTextContent } from '../../../components/RichTextContent'
-import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
+import { ApiConfigAlert } from '../../../components/ApiConfigAlert'
 import { usePatientEvaluationForms } from '../../evaluation-forms/hooks/usePatientEvaluationForms'
 import {
   parseAnswers,
@@ -68,7 +68,7 @@ export function PatientComparePage() {
       <Button component={Link} to={`/patients/${id}`} sx={{ mb: 2 }}>
         Voltar ao paciente
       </Button>
-      <SupabaseConfigAlert />
+      <ApiConfigAlert />
       {loading ? <CircularProgress /> : null}
       {ep ? (
         <Alert severity="error">{(errP as Error).message}</Alert>

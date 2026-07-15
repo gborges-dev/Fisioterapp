@@ -13,7 +13,7 @@ import {
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 
 import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
-import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
+import { ApiConfigAlert } from '../../../components/ApiConfigAlert'
 import { DocumentsPanel } from '../../documents/components/DocumentsPanel'
 import { PatientEvaluationFormsPanel } from '../../evaluation-forms/components/PatientEvaluationFormsPanel'
 import { EvolutionPanel } from '../../evolution/components/EvolutionPanel'
@@ -127,7 +127,7 @@ export function PatientDetailPage() {
             : [{ label: 'Paciente' }]),
         ]}
       />
-      <SupabaseConfigAlert />
+      <ApiConfigAlert />
       {isLoading ? <CircularProgress /> : null}
       {isError ? (
         <Alert severity="error">{(error as Error).message}</Alert>

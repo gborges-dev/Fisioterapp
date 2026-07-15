@@ -11,7 +11,7 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
-import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
+import { ApiConfigAlert } from '../../../components/ApiConfigAlert'
 import { useToast } from '../../../components/toast'
 import { validateRequiredFields } from '../../../lib/formFieldValidation'
 import type { FormFieldSchema } from '../../../types/database.types'
@@ -155,7 +155,7 @@ function PatientEvaluationFormEditor({
       >
         Voltar às fichas
       </Button>
-      <SupabaseConfigAlert />
+      <ApiConfigAlert />
 
       <Box
         component="form"

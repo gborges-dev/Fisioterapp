@@ -14,7 +14,7 @@ import { useTheme } from '@mui/material/styles'
 
 import { ListPageSkeleton } from '../../../components/ListPageSkeleton'
 import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
-import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
+import { ApiConfigAlert } from '../../../components/ApiConfigAlert'
 import {
   dashboardChartDays,
   useDashboardEvolutionDaily,
@@ -55,7 +55,7 @@ export function DashboardPage() {
       <Typography variant="h4" component="h2" gutterBottom>
         Painel
       </Typography>
-      <SupabaseConfigAlert />
+      <ApiConfigAlert />
       {isLoading ? (
         <ListPageSkeleton count={4} cardHeight={88} />
       ) : null}

@@ -27,7 +27,7 @@ import { Link } from 'react-router-dom'
 
 import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
 import { RichTextContent } from '../../../components/RichTextContent'
-import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
+import { ApiConfigAlert } from '../../../components/ApiConfigAlert'
 import { useSortState, useTableFilterSort } from '../../../hooks/useTableFilterSort'
 import { useDashboardEvolutionOverview } from '../../dashboard/hooks/useDashboardEvolutionOverview'
 import type { PatientEvolutionOverviewItem } from '../../dashboard/services/dashboardApi'
@@ -217,7 +217,7 @@ export function ReportsPage() {
       <Typography variant="h4" component="h2" gutterBottom>
         Relatórios
       </Typography>
-      <SupabaseConfigAlert />
+      <ApiConfigAlert />
 
       <Tabs
         value={tab}

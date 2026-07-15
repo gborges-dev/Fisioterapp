@@ -18,7 +18,7 @@ import { Link } from 'react-router-dom'
 import { ConfirmDeleteDialog } from '../../../components/ConfirmDeleteDialog'
 import { ListPageSkeleton } from '../../../components/ListPageSkeleton'
 import { RichTextEditor } from '../../../components/RichTextEditor'
-import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
+import { ApiConfigAlert } from '../../../components/ApiConfigAlert'
 import { isRichTextEmpty } from '../../../lib/richText'
 import { usePatientEvaluationForms } from '../../evaluation-forms/hooks/usePatientEvaluationForms'
 import {
@@ -144,7 +144,7 @@ export function EvolutionPanel({ patientId }: { patientId: string }) {
       <Typography variant="h6" component="h3" gutterBottom>
         Evolução
       </Typography>
-      <SupabaseConfigAlert />
+      <ApiConfigAlert />
 
       {loadingForms ? (
         <ListPageSkeleton count={1} cardHeight={48} />

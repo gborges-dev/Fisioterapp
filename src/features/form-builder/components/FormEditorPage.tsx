@@ -17,7 +17,7 @@ import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
-import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
+import { ApiConfigAlert } from '../../../components/ApiConfigAlert'
 import { useToast } from '../../../components/toast'
 import { isOptionFieldType, validateOptionFields } from '../../../lib/formFieldValidation'
 import type { FormFieldSchema, Json } from '../../../types/database.types'
@@ -154,7 +154,7 @@ function FormEditorFields({
       <Typography variant="h4" component="h2" gutterBottom>
         {isNew ? 'Novo formulário' : 'Editar formulário'}
       </Typography>
-      <SupabaseConfigAlert />
+      <ApiConfigAlert />
       {err ? (
         <Alert severity="error" sx={{ mb: 2 }}>
           {(err as Error).message}

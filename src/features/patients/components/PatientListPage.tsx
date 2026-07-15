@@ -24,7 +24,7 @@ import { ConfirmDeleteDialog } from '../../../components/ConfirmDeleteDialog'
 import { ListCard } from '../../../components/ListCard'
 import { ListPageSkeleton } from '../../../components/ListPageSkeleton'
 import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
-import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
+import { ApiConfigAlert } from '../../../components/ApiConfigAlert'
 import { toastError, toastSuccess } from '../../../components/toast'
 import { useSortState, useTableFilterSort } from '../../../hooks/useTableFilterSort'
 import { usePatientMutations, usePatients } from '../hooks/usePatients'
@@ -114,7 +114,7 @@ export function PatientListPage() {
         </Button>
       </Box>
 
-      <SupabaseConfigAlert />
+      <ApiConfigAlert />
       <TextField
         placeholder="Pesquisar por nome, email ou telefone…"
         value={filter}

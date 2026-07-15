@@ -18,7 +18,7 @@ import { useRef, useState } from 'react'
 import { ConfirmDeleteDialog } from '../../../components/ConfirmDeleteDialog'
 import { ListCard } from '../../../components/ListCard'
 import { ListPageSkeleton } from '../../../components/ListPageSkeleton'
-import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
+import { ApiConfigAlert } from '../../../components/ApiConfigAlert'
 import { toastError, toastSuccess } from '../../../components/toast'
 import {
   useDeleteDocument,
@@ -84,7 +84,7 @@ export function DocumentsPanel({ patientId }: { patientId: string }) {
       <Typography variant="h6" component="h3" gutterBottom>
         Documentos
       </Typography>
-      <SupabaseConfigAlert />
+      <ApiConfigAlert />
       <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
         <input ref={inputRef} type="file" hidden onChange={onFileChange} />
         <Button

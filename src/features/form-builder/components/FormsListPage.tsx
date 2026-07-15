@@ -33,7 +33,7 @@ import { ConfirmDeleteDialog } from '../../../components/ConfirmDeleteDialog'
 import { ListCard } from '../../../components/ListCard'
 import { ListPageSkeleton } from '../../../components/ListPageSkeleton'
 import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
-import { SupabaseConfigAlert } from '../../../components/SupabaseConfigAlert'
+import { ApiConfigAlert } from '../../../components/ApiConfigAlert'
 import { useToast } from '../../../components/toast'
 import { useSortState, useTableFilterSort } from '../../../hooks/useTableFilterSort'
 import type { FormFieldType } from '../../../types/database.types'
@@ -223,7 +223,7 @@ export function FormsListPage() {
       </Grid>
       ) : null}
 
-      <SupabaseConfigAlert />
+      <ApiConfigAlert />
       <TextField
         placeholder="Pesquisar por título ou data…"
         value={filter}
