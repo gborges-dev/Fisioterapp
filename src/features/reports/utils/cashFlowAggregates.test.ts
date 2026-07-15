@@ -29,7 +29,7 @@ describe('cashFlowAggregates', () => {
   it('summarizeCashFlow totals entradas, saidas and saldo', () => {
     const totals = summarizeCashFlow([
       entry({ type: 'entrada', amount: 100, entry_date: '2026-07-01' }),
-      entry({ type: 'entrada', amount: '50.5', entry_date: '2026-07-02' }),
+      entry({ type: 'entrada', amount: 50.5, entry_date: '2026-07-02' }),
       entry({ type: 'saida', amount: 30, entry_date: '2026-07-01' }),
     ])
     expect(totals.entradas).toBe(150.5)

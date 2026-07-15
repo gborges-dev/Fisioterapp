@@ -5,6 +5,7 @@ import { BrowserRouter } from 'react-router-dom'
 
 import { AppRoutes } from './app/AppRoutes.tsx'
 import { ToastProvider } from './components/toast'
+import { AuthProvider } from './features/auth/AuthContext'
 import { createAppTheme } from './theme/appTheme'
 import { useColorMode } from './theme/useColorMode'
 
@@ -16,7 +17,9 @@ export function ThemedApp() {
       <ToastProvider>
         <CssBaseline enableColorScheme />
         <BrowserRouter>
-          <AppRoutes />
+          <AuthProvider>
+            <AppRoutes />
+          </AuthProvider>
         </BrowserRouter>
       </ToastProvider>
     </ThemeProvider>

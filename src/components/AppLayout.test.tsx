@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { Route, Routes, MemoryRouter } from 'react-router-dom'
 
+import { AuthProvider } from '../features/auth/AuthContext'
 import { ToastProvider } from './toast'
 import { ColorModeProvider } from '../theme/ColorModeProvider'
 import { appTheme } from '../theme/appTheme'
@@ -15,11 +16,13 @@ describe('AppLayout', () => {
         <ThemeProvider theme={appTheme}>
           <ToastProvider>
             <MemoryRouter initialEntries={['/']}>
-              <Routes>
-                <Route element={<AppLayout />}>
-                  <Route path="/" element={<div>Conteúdo</div>} />
-                </Route>
-              </Routes>
+              <AuthProvider>
+                <Routes>
+                  <Route element={<AppLayout />}>
+                    <Route path="/" element={<div>Conteúdo</div>} />
+                  </Route>
+                </Routes>
+              </AuthProvider>
             </MemoryRouter>
           </ToastProvider>
         </ThemeProvider>

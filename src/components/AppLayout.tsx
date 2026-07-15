@@ -5,6 +5,7 @@ import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined'
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined'
 import HealingOutlinedIcon from '@mui/icons-material/HealingOutlined'
 import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined'
+import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined'
 import PaymentsOutlinedIcon from '@mui/icons-material/PaymentsOutlined'
 import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline'
 import {
@@ -12,6 +13,7 @@ import {
   BottomNavigation,
   BottomNavigationAction,
   Box,
+  Button,
   Divider,
   Drawer,
   IconButton,
@@ -27,13 +29,14 @@ import {
 } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { useMemo } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 
+import { useAuth } from '../features/auth/AuthContext'
 import { useColorMode } from '../theme/useColorMode'
 
 const drawerWidth = 260
 
-const navItems = [
+const clinicalNavItems = [
   { to: '/', label: 'Painel' },
   { to: '/patients', label: 'Pacientes' },
   { to: '/evaluation-forms', label: 'Fichas de avaliação' },
@@ -64,12 +67,27 @@ function bottomNavValue(pathname: string): string {
 export function AppLayout() {
   const theme = useTheme()
   const { mode, toggleColorMode } = useColorMode()
+  const { user, logout, isSuperAdmin } = useAuth()
+  const navigate = useNavigate()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const location = useLocation()
   const mobileNavValue = useMemo(
     () => bottomNavValue(location.pathname),
     [location.pathname],
   )
+
+  const navItems = useMemo(
+    () =>
+      isSuperAdmin
+        ? [...clinicalNavItems, { to: '/admin/bases', label: 'Bases' }]
+        : [...clinicalNavItems],
+    [isSuperAdmin],
+  )
+
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+  }
 
   const drawer = (
     <Box sx={{ overflow: 'auto' }}>
@@ -125,12 +143,27 @@ export function AppLayout() {
         component="header"
       >
         <Toolbar>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexGrow: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexGrow: 1, minWidth: 0 }}>
             <HealingOutlinedIcon sx={{ color: 'primary.main', opacity: 0.9 }} aria-hidden />
-            <Typography variant="h6" component="h1" sx={{ fontWeight: 600 }}>
+            <Typography variant="h6" component="h1" sx={{ fontWeight: 600 }} noWrap>
               Fisioterapp
             </Typography>
           </Box>
+          {user?.name ? (
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              noWrap
+              sx={{ mr: 1, display: { xs: 'none', sm: 'block' }, maxWidth: 200 }}
+            >
+              {user.name}
+            </Typography>
+          ) : null}
+          <Tooltip title="Sair">
+            <IconButton color="inherit" onClick={handleLogout} aria-label="Sair" sx={{ mr: 0.5 }}>
+              <LogoutOutlinedIcon />
+            </IconButton>
+          </Tooltip>
           <Tooltip
             title={mode === 'light' ? 'Ativar tema escuro' : 'Ativar tema claro'}
           >
@@ -184,6 +217,16 @@ export function AppLayout() {
           minHeight: '100vh',
         }}
       >
+        {isMobile && isSuperAdmin ? (
+          <Button
+            component={NavLink}
+            to="/admin/bases"
+            size="small"
+            sx={{ mb: 1.5 }}
+          >
+            Bases
+          </Button>
+        ) : null}
         <Outlet />
       </Box>
 
