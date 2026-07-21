@@ -31,6 +31,14 @@ Opcional: `VITE_DEFAULT_WORKSPACE_ID` alinhado ao workspace seed (`00000000-0000
 
 Formulários públicos: rota `/f/:token` (sem login).
 
+## Ambiente DEV e CI/CD
+
+Checklist completo (Supabase DEV, branch `dev`, secrets GitHub, workflows):
+
+→ **[docs/DEV_ENVIRONMENT_CHECKLIST.md](docs/DEV_ENVIRONMENT_CHECKLIST.md)**
+
+Variáveis locais de dev: copie `.env.dev.example` para `.env`.
+
 ## Scripts
 
 | Comando | Descrição |
@@ -38,3 +46,4 @@ Formulários públicos: rota `/f/:token` (sem login).
 | `npm run dev` | Dev server (Vite) |
 | `npm run build` | Build de produção |
 | `npm run preview` | Preview do build |
+| `npm run test:run` | Testes (Vitest) |

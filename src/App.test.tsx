@@ -5,6 +5,7 @@ import type { ReactElement } from 'react'
 import { describe, expect, it } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 
+import { AuthProvider } from './features/auth/AuthContext'
 import { AppRoutes } from './app/AppRoutes'
 import { ToastProvider } from './components/toast'
 import { ColorModeProvider } from './theme/ColorModeProvider'
@@ -19,7 +20,9 @@ function renderWithProviders(ui: ReactElement) {
       <ColorModeProvider>
         <ThemeProvider theme={appTheme}>
           <ToastProvider>
-            <MemoryRouter initialEntries={['/']}>{ui}</MemoryRouter>
+            <AuthProvider>
+              <MemoryRouter initialEntries={['/']}>{ui}</MemoryRouter>
+            </AuthProvider>
           </ToastProvider>
         </ThemeProvider>
       </ColorModeProvider>
@@ -28,8 +31,8 @@ function renderWithProviders(ui: ReactElement) {
 }
 
 describe('AppRoutes', () => {
-  it('renderiza o painel na rota inicial', () => {
+  it('redireciona utilizador não autenticado para o login', () => {
     renderWithProviders(<AppRoutes />)
-    expect(screen.getByRole('heading', { name: 'Painel' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Entrar no Fisioterapp' })).toBeInTheDocument()
   })
 })

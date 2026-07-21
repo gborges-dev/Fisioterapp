@@ -1,0 +1,84 @@
+name: Deploy Dev
+
+on:
+  push:
+    branches: [dev]
+
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: false
+
+jobs:
+  supabase-migrations:
+    name: Migrations → Supabase DEV
+    runs-on: ubuntu-latest
+    environment: development
+    if: github.repository == 'gborges-dev/Fisioterapp'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link ao projeto DEV
+        run: supabase link --project-ref "${{ secrets.SUPABASE_DEV_PROJECT_REF }}"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DEV_DB_PASSWORD }}
+
+      - name: Aplicar migrations
+        run: supabase db push
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DEV_DB_PASSWORD }}
+
+  build-front:
+    name: Build front DEV
+    runs-on: ubuntu-latest
+    environment: development
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL_DEV }}
+          VITE_DEFAULT_WORKSPACE_ID: ${{ vars.VITE_DEFAULT_WORKSPACE_ID || '00000000-0000-0000-0000-000000000001' }}
+
+      - name: Upload dist DEV
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-dev
+          path: dist/
+          retention-days: 14
+
+  # Descomente e configure os secrets VERCEL_* no GitHub para deploy automático do front.
+  # deploy-vercel:
+  #   name: Deploy front → Vercel (preview dev)
+  #   runs-on: ubuntu-latest
+  #   needs: build-front
+  #   environment: development
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: amondnet/vercel-action@v25
+  #       with:
+  #         vercel-token: ${{ secrets.VERCEL_TOKEN }}
+  #         vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+  #         vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+  #         working-directory: ./
+  #         alias-domains: dev.fisioterapp.example.com
