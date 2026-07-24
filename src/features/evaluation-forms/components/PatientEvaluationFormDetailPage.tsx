@@ -1,20 +1,16 @@
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material'
+import { Loader2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
-import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
-import { ApiConfigAlert } from '../../../components/ApiConfigAlert'
-import { useToast } from '../../../components/toast'
-import { validateRequiredFields } from '../../../lib/formFieldValidation'
-import type { FormFieldSchema } from '../../../types/database.types'
+import { PageHeader } from '@/components/AppShell'
+import { ApiConfigAlert } from '@/components/ApiConfigAlert'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { useToast } from '@/components/toast'
+import { validateRequiredFields } from '@/lib/formFieldValidation'
+import type { FormFieldSchema } from '@/types/database.types'
 import { usePatient } from '../../patients/hooks/usePatients'
 import { patientTabPath } from '../../patients/patientTabs'
 import { EvaluationFormFieldsRenderer } from './EvaluationFormFieldsRenderer'
@@ -59,17 +55,29 @@ export function PatientEvaluationFormDetailPage() {
   )
 
   if (!patientId || !formId) {
-    return <Alert severity="error">Ficha inválida.</Alert>
+    return (
+      <Alert variant="destructive">
+        <AlertDescription>Ficha inválida.</AlertDescription>
+      </Alert>
+    )
   }
 
   if (isLoading) {
-    return <CircularProgress />
+    return <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
   }
   if (isError) {
-    return <Alert severity="error">{(error as Error).message}</Alert>
+    return (
+      <Alert variant="destructive">
+        <AlertDescription>{(error as Error).message}</AlertDescription>
+      </Alert>
+    )
   }
   if (!form) {
-    return <Alert severity="warning">Ficha não encontrada.</Alert>
+    return (
+      <Alert variant="warning">
+        <AlertDescription>Ficha não encontrada.</AlertDescription>
+      </Alert>
+    )
   }
 
   return (
@@ -128,9 +136,9 @@ function PatientEvaluationFormEditor({
   }
 
   return (
-    <Box>
-      <PageBreadcrumbs
-        items={[
+    <div>
+      <PageHeader
+        breadcrumbs={[
           { label: 'Painel', to: '/' },
           { label: 'Pacientes', to: '/patients' },
           ...(patientName
@@ -144,58 +152,51 @@ function PatientEvaluationFormEditor({
               ]
             : [{ label: form.title }]),
         ]}
+        title={form.title}
+        actions={
+          <Button variant="outline" asChild>
+            <Link to={`/patients/${patientId}/evaluation-forms`}>Voltar às fichas</Link>
+          </Button>
+        }
       />
-      <Typography variant="h4" component="h2" gutterBottom>
-        {form.title}
-      </Typography>
-      <Button
-        component={Link}
-        to={`/patients/${patientId}/evaluation-forms`}
-        sx={{ mb: 2 }}
-      >
-        Voltar às fichas
-      </Button>
       <ApiConfigAlert />
 
-      <Box
-        component="form"
+      <form
         onSubmit={(e) => void handleSubmit(e)}
         noValidate
-        sx={{ maxWidth: { xs: '100%', sm: 640 } }}
+        className="max-w-xl space-y-4"
       >
-        <Stack spacing={2}>
-          <TextField
+        <div className="space-y-2">
+          <Label htmlFor="evaluation-date">Data da avaliação</Label>
+          <Input
+            id="evaluation-date"
             type="date"
-            label="Data da avaliação"
             value={evaluationDate}
             onChange={(e) => setEvaluationDate(e.target.value)}
-            fullWidth
             required
-            slotProps={{ inputLabel: { shrink: true } }}
           />
-          <EvaluationFormFieldsRenderer
-            fields={fields}
-            answers={answers}
-            onChange={(fieldId, value) =>
-              setAnswers((prev) => ({ ...prev, [fieldId]: value }))
-            }
-          />
-          {update.error ? (
-            <Alert severity="error">{(update.error as Error).message}</Alert>
-          ) : null}
-          <Stack direction="row" spacing={2} justifyContent="flex-end">
-            <Button
-              component={Link}
-              to={`/patients/${patientId}/evaluation-forms`}
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" variant="contained" disabled={update.isPending}>
-              Guardar alterações
-            </Button>
-          </Stack>
-        </Stack>
-      </Box>
-    </Box>
+        </div>
+        <EvaluationFormFieldsRenderer
+          fields={fields}
+          answers={answers}
+          onChange={(fieldId, value) =>
+            setAnswers((prev) => ({ ...prev, [fieldId]: value }))
+          }
+        />
+        {update.error ? (
+          <Alert variant="destructive">
+            <AlertDescription>{(update.error as Error).message}</AlertDescription>
+          </Alert>
+        ) : null}
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button variant="outline" asChild>
+            <Link to={`/patients/${patientId}/evaluation-forms`}>Cancelar</Link>
+          </Button>
+          <Button type="submit" disabled={update.isPending}>
+            Guardar alterações
+          </Button>
+        </div>
+      </form>
+    </div>
   )
 }

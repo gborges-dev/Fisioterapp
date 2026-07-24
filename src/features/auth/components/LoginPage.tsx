@@ -1,16 +1,13 @@
-import {
-  Alert,
-  Box,
-  Button,
-  Paper,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material'
+import { CircleAlert } from 'lucide-react'
 import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 
-import { ApiError } from '../../../lib/apiClient'
+import { GlassPanel } from '@/components/AppShell'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { ApiError } from '@/lib/apiClient'
 import { useAuth } from '../AuthContext'
 import { getActiveWorkspaceId, getStoredUser } from '../authStorage'
 
@@ -49,65 +46,59 @@ export function LoginPage() {
   }
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'grid',
-        placeItems: 'center',
-        px: 2,
-        background: (t) =>
-          `linear-gradient(180deg, ${t.palette.background.default} 0%, ${t.palette.background.paper} 48%)`,
-      }}
-    >
-      <Paper
-        component="form"
-        onSubmit={handleSubmit}
-        elevation={2}
-        sx={{ width: '100%', maxWidth: 420, p: { xs: 3, sm: 4 } }}
-      >
-        <Stack spacing={2.5}>
-          <Box>
-            <Typography variant="subtitle2" color="text.secondary">
-              Área clínica
-            </Typography>
-            <Typography variant="h5" component="h1" sx={{ fontWeight: 600 }}>
+    <div className="grid min-h-svh place-items-center px-4">
+      <GlassPanel className="w-full max-w-md p-6 sm:p-8">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <p className="text-sm text-muted-foreground">Área clínica</p>
+            <h1 className="display mt-1 text-2xl font-semibold tracking-tight">
               Entrar no Fisioterapp
-            </Typography>
-          </Box>
+            </h1>
+          </div>
 
-          {error ? <Alert severity="error">{error}</Alert> : null}
+          {error ? (
+            <Alert variant="destructive">
+              <CircleAlert className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          ) : null}
 
-          <TextField
-            label="E-mail"
-            type="email"
-            name="email"
-            autoComplete="email"
-            value={email}
-            onChange={(ev) => setEmail(ev.target.value)}
-            required
-            fullWidth
-          />
-          <TextField
-            label="Senha"
-            type="password"
-            name="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(ev) => setPassword(ev.target.value)}
-            required
-            fullWidth
-          />
+          <div className="space-y-2">
+            <Label htmlFor="email">E-mail</Label>
+            <Input
+              id="email"
+              type="email"
+              name="email"
+              autoComplete="email"
+              value={email}
+              onChange={(ev) => setEmail(ev.target.value)}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="password">Senha</Label>
+            <Input
+              id="password"
+              type="password"
+              name="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(ev) => setPassword(ev.target.value)}
+              required
+            />
+          </div>
+
           <Button
             type="submit"
-            variant="contained"
-            size="large"
+            size="lg"
+            className="w-full"
             disabled={submitting || !email.trim() || !password}
-            fullWidth
           >
             {submitting ? 'A entrar…' : 'Entrar'}
           </Button>
-        </Stack>
-      </Paper>
-    </Box>
+        </form>
+      </GlassPanel>
+    </div>
   )
 }

@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 
-import { AppLayout } from '../components/AppLayout'
+import { AppShell } from '../components/AppShell'
 import { BasesPage } from '../features/admin/components/BasesPage'
 import { LoginPage } from '../features/auth/components/LoginPage'
 import { ProtectedRoute } from '../features/auth/components/ProtectedRoute'
@@ -32,7 +32,7 @@ export function AppRoutes() {
         <Route element={<SuperAdminRoute />}>
           <Route path="/admin/bases" element={<BasesPage />} />
         </Route>
-        <Route element={<AppLayout />}>
+        <Route element={<AppShell />}>
           <Route index element={<DashboardPage />} />
           <Route path="patients">
             <Route index element={<PatientListPage />} />

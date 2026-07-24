@@ -1,12 +1,14 @@
-import {
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Typography,
-} from '@mui/material'
 import type { ReactNode } from 'react'
+
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 
 export function ConfirmDeleteDialog({
   open,
@@ -26,28 +28,25 @@ export function ConfirmDeleteDialog({
   onConfirm: () => void
 }) {
   return (
-    <Dialog open={open} onClose={loading ? undefined : onCancel}>
-      <DialogTitle>{title}</DialogTitle>
+    <Dialog open={open} onOpenChange={(v) => !v && !loading && onCancel()}>
       <DialogContent>
-        {typeof message === 'string' ? (
-          <Typography variant="body2">{message}</Typography>
-        ) : (
-          message
-        )}
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          {typeof message === 'string' ? (
+            <DialogDescription>{message}</DialogDescription>
+          ) : (
+            <div className="text-sm text-muted-foreground">{message}</div>
+          )}
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={onCancel} disabled={loading}>
+            Cancelar
+          </Button>
+          <Button variant="destructive" onClick={onConfirm} disabled={loading}>
+            {confirmLabel}
+          </Button>
+        </DialogFooter>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onCancel} disabled={loading}>
-          Cancelar
-        </Button>
-        <Button
-          color="error"
-          variant="contained"
-          onClick={onConfirm}
-          disabled={loading}
-        >
-          {confirmLabel}
-        </Button>
-      </DialogActions>
     </Dialog>
   )
 }

@@ -1,20 +1,8 @@
-import { Alert, Snackbar } from '@mui/material'
-import {
-  useCallback,
-  useLayoutEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from 'react'
+import { useLayoutEffect, useMemo, type ReactNode } from 'react'
+import { toast } from 'sonner'
 
 import { ToastContext } from './toastContext'
 import { registerToastHandlers } from './toastBridge'
-
-type SnackbarState = {
-  open: boolean
-  message: string
-  severity: 'success' | 'error'
-}
 
 function normalizeError(message: string | Error): string {
   if (typeof message === 'string') return message
@@ -23,23 +11,19 @@ function normalizeError(message: string | Error): string {
 }
 
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<SnackbarState>({
-    open: false,
-    message: '',
-    severity: 'success',
-  })
+  const showSuccess = useMemo(
+    () => (message: string) => {
+      toast.success(message)
+    },
+    [],
+  )
 
-  const showSuccess = useCallback((message: string) => {
-    setState({ open: true, message, severity: 'success' })
-  }, [])
-
-  const showError = useCallback((message: string | Error) => {
-    setState({
-      open: true,
-      message: normalizeError(message),
-      severity: 'error',
-    })
-  }, [])
+  const showError = useMemo(
+    () => (message: string | Error) => {
+      toast.error(normalizeError(message))
+    },
+    [],
+  )
 
   const value = useMemo(
     () => ({ showSuccess, showError }),
@@ -51,33 +35,5 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     return () => registerToastHandlers(null)
   }, [showSuccess, showError])
 
-  const handleClose = useCallback(
-    (_event?: unknown, reason?: string) => {
-      if (reason === 'clickaway') return
-      setState((s) => ({ ...s, open: false }))
-    },
-    [],
-  )
-
-  return (
-    <ToastContext.Provider value={value}>
-      {children}
-      <Snackbar
-        open={state.open}
-        autoHideDuration={5000}
-        onClose={handleClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          onClose={handleClose}
-          severity={state.severity}
-          variant="filled"
-          elevation={6}
-          sx={{ width: '100%', alignItems: 'center' }}
-        >
-          {state.message}
-        </Alert>
-      </Snackbar>
-    </ToastContext.Provider>
-  )
+  return <ToastContext.Provider value={value}>{children}</ToastContext.Provider>
 }

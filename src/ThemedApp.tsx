@@ -1,27 +1,31 @@
-import CssBaseline from '@mui/material/CssBaseline'
-import { ThemeProvider } from '@mui/material/styles'
-import { useMemo } from 'react'
 import { BrowserRouter } from 'react-router-dom'
+import { Toaster } from 'sonner'
 
 import { AppRoutes } from './app/AppRoutes.tsx'
 import { ToastProvider } from './components/toast'
 import { AuthProvider } from './features/auth/AuthContext'
-import { createAppTheme } from './theme/appTheme'
-import { useColorMode } from './theme/useColorMode'
+import { TooltipProvider } from './components/ui/tooltip'
 
 export function ThemedApp() {
-  const { mode } = useColorMode()
-  const theme = useMemo(() => createAppTheme(mode), [mode])
   return (
-    <ThemeProvider theme={theme}>
+    <TooltipProvider delayDuration={300}>
       <ToastProvider>
-        <CssBaseline enableColorScheme />
+        <Toaster
+          position="bottom-center"
+          richColors
+          closeButton
+          toastOptions={{
+            classNames: {
+              toast: 'glass-strong border-border',
+            },
+          }}
+        />
         <BrowserRouter>
           <AuthProvider>
             <AppRoutes />
           </AuthProvider>
         </BrowserRouter>
       </ToastProvider>
-    </ThemeProvider>
+    </TooltipProvider>
   )
 }

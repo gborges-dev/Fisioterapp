@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client'
 
 import { ThemedApp } from './ThemedApp'
 import { ColorModeProvider } from './theme/ColorModeProvider'
-import './index.css'
+import './styles.css'
 
 const queryClient = new QueryClient()
 

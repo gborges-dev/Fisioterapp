@@ -1,23 +1,19 @@
-import AddIcon from '@mui/icons-material/Add'
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
-import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
-import {
-  Alert,
-  Box,
-  Button,
-  Grid,
-  IconButton,
-  Stack,
-  Tooltip,
-  Typography,
-} from '@mui/material'
+import { Eye, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import { ConfirmDeleteDialog } from '../../../components/ConfirmDeleteDialog'
-import { ListCard } from '../../../components/ListCard'
-import { ListPageSkeleton } from '../../../components/ListPageSkeleton'
-import { ApiConfigAlert } from '../../../components/ApiConfigAlert'
+import { EmptyState } from '@/components/AppShell'
+import { ApiConfigAlert } from '@/components/ApiConfigAlert'
+import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog'
+import { ListCard } from '@/components/ListCard'
+import { ListPageSkeleton } from '@/components/ListPageSkeleton'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import {
   useDeletePatientEvaluationForm,
   usePatientEvaluationForms,
@@ -80,92 +76,87 @@ export function PatientEvaluationFormsPanel({
   }
 
   return (
-    <Box>
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        justifyContent="space-between"
-        alignItems={{ xs: 'stretch', sm: 'center' }}
-        spacing={2}
-        sx={{ mb: 2 }}
-      >
-        <Typography variant="h6" component="h3">
-          Fichas de avaliação
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          component={Link}
-          to={`/patients/${patientId}/evaluation-forms/new`}
-          sx={{ alignSelf: { xs: 'stretch', sm: 'auto' } }}
-        >
-          Adicionar ficha
+    <div>
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h3 className="text-lg font-semibold text-foreground">Fichas de avaliação</h3>
+        <Button asChild className="w-full sm:w-auto">
+          <Link to={`/patients/${patientId}/evaluation-forms/new`}>
+            <Plus className="h-4 w-4" />
+            Adicionar ficha
+          </Link>
         </Button>
-      </Stack>
+      </div>
 
       <ApiConfigAlert />
 
       {isLoading ? <ListPageSkeleton /> : null}
       {isError ? (
-        <Alert severity="error">{(error as Error).message}</Alert>
+        <Alert variant="destructive">
+          <AlertDescription>{(error as Error).message}</AlertDescription>
+        </Alert>
       ) : null}
       {!isLoading && !isError && data && data.length === 0 ? (
-        <Stack spacing={2}>
-          <Typography color="text.secondary">
-            Este paciente ainda não tem fichas de avaliação.
-          </Typography>
-          <Button
-            variant="outlined"
-            startIcon={<AddIcon />}
-            component={Link}
-            to={`/patients/${patientId}/evaluation-forms/new`}
-            sx={{ alignSelf: 'flex-start' }}
-          >
-            Adicionar primeira ficha
-          </Button>
-        </Stack>
+        <EmptyState
+          title="Sem fichas de avaliação"
+          description="Este paciente ainda não tem fichas de avaliação."
+          action={
+            <Button variant="outline" asChild>
+              <Link to={`/patients/${patientId}/evaluation-forms/new`}>
+                <Plus className="h-4 w-4" />
+                Adicionar primeira ficha
+              </Link>
+            </Button>
+          }
+        />
       ) : null}
       {!isLoading && !isError && data && data.length > 0 ? (
-        <Grid container spacing={2}>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {data.map((form) => (
-            <Grid key={form.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-              <ListCard
-                actions={
-                  <>
-                    <Tooltip title="Ver ficha">
-                      <IconButton
-                        component={Link}
-                        to={`/patients/${patientId}/evaluation-forms/${form.id}`}
-                        size="small"
-                        color="primary"
+            <ListCard
+              key={form.id}
+              actions={
+                <>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-primary"
+                        asChild
                         aria-label="Ver ficha"
                       >
-                        <VisibilityOutlinedIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Eliminar ficha">
-                      <IconButton
-                        size="small"
-                        color="error"
+                        <Link to={`/patients/${patientId}/evaluation-forms/${form.id}`}>
+                          <Eye className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Ver ficha</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive"
                         aria-label="Eliminar ficha"
                         onClick={() => void openDeleteDialog(form)}
                         disabled={remove.isPending}
                       >
-                        <DeleteOutlineIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </>
-                }
-              >
-                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                  {form.title}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  Data: {formatDate(form.evaluation_date)}
-                </Typography>
-              </ListCard>
-            </Grid>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Eliminar ficha</TooltipContent>
+                  </Tooltip>
+                </>
+              }
+            >
+              <h4 className="font-semibold text-foreground">{form.title}</h4>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Data: {formatDate(form.evaluation_date)}
+              </p>
+            </ListCard>
           ))}
-        </Grid>
+        </div>
       ) : null}
 
       <ConfirmDeleteDialog
@@ -195,6 +186,6 @@ export function PatientEvaluationFormsPanel({
         }}
         onConfirm={() => void confirmDelete()}
       />
-    </Box>
+    </div>
   )
 }

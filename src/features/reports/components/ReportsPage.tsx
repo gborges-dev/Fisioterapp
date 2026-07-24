@@ -1,37 +1,27 @@
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
-import SearchIcon from '@mui/icons-material/Search'
-import {
-  Alert,
-  Autocomplete,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  CircularProgress,
-  Grid,
-  InputAdornment,
-  Menu,
-  MenuItem,
-  Stack,
-  Tab,
-  Tabs,
-  TextField,
-  Typography,
-} from '@mui/material'
-import { BarChart } from '@mui/x-charts/BarChart'
-import { LineChart } from '@mui/x-charts/LineChart'
-import { useTheme } from '@mui/material/styles'
+import { ChevronDown, Loader2, Search } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
-import { RichTextContent } from '../../../components/RichTextContent'
-import { ApiConfigAlert } from '../../../components/ApiConfigAlert'
-import { useSortState, useTableFilterSort } from '../../../hooks/useTableFilterSort'
+import { EmptyState, GlassPanel, PageHeader } from '@/components/AppShell'
+import { ApiConfigAlert } from '@/components/ApiConfigAlert'
+import { GlassAreaChart } from '@/components/charts/GlassAreaChart'
+import { GlassBarChart } from '@/components/charts/GlassBarChart'
+import { FilterableSelect } from '@/components/FilterableSelect'
+import { RichTextContent } from '@/components/RichTextContent'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useSortState, useTableFilterSort } from '@/hooks/useTableFilterSort'
+import { cn } from '@/lib/utils'
+import { useColorMode } from '@/theme/useColorMode'
 import { useDashboardEvolutionOverview } from '../../dashboard/hooks/useDashboardEvolutionOverview'
 import type { PatientEvolutionOverviewItem } from '../../dashboard/services/dashboardApi'
 import { useFinanceEntries } from '../../finance/hooks/useFinance'
+import { useFormTemplates } from '../../form-builder/hooks/useFormTemplates'
+import type { FormTemplateRow } from '../../form-builder/types'
 import { usePatients } from '../../patients/hooks/usePatients'
 import type { PatientRow } from '../../patients/services/patientsApi'
 import {
@@ -48,8 +38,6 @@ import {
 } from '../utils/cashFlowAggregates'
 import { exportCashFlowCsv, exportCashFlowPdf } from '../utils/cashFlowExport'
 import { formatSubmissionAnswersSummary } from '../utils/formatSubmissionAnswers'
-import { useFormTemplates } from '../../form-builder/hooks/useFormTemplates'
-import type { FormTemplateRow } from '../../form-builder/types'
 
 function defaultDateRange() {
   const to = new Date()
@@ -64,6 +52,21 @@ function defaultDateRange() {
 function shortDate(ymd: string) {
   const [, m, d] = ymd.split('-')
   return d && m ? `${d}/${m}` : ymd
+}
+
+function useChartColors() {
+  const { mode } = useColorMode()
+  return useMemo(() => {
+    const root = document.documentElement
+    const get = (name: string) =>
+      getComputedStyle(root).getPropertyValue(name).trim()
+    void mode
+    return {
+      primary: get('--chart-1') || 'oklch(0.58 0.11 190)',
+      success: get('--chart-2') || 'oklch(0.65 0.14 160)',
+      error: get('--chart-5') || 'oklch(0.65 0.18 25)',
+    }
+  }, [mode])
 }
 
 type OverviewSortKey = keyof PatientEvolutionOverviewItem
@@ -82,8 +85,8 @@ function compareOverview(
 }
 
 export function ReportsPage() {
-  const theme = useTheme()
-  const [tab, setTab] = useState(0)
+  const chartColors = useChartColors()
+  const [tab, setTab] = useState('0')
   const range = useMemo(() => defaultDateRange(), [])
   const [patient, setPatient] = useState<PatientRow | null>(null)
   const [evoFrom, setEvoFrom] = useState(range.from)
@@ -101,9 +104,7 @@ export function ReportsPage() {
   const [cashFrom, setCashFrom] = useState(range.from)
   const [cashTo, setCashTo] = useState(range.to)
   const [cashPatient, setCashPatient] = useState<PatientRow | null>(null)
-  const [exportMenuAnchor, setExportMenuAnchor] = useState<null | HTMLElement>(
-    null,
-  )
+  const [exportOpen, setExportOpen] = useState(false)
 
   const { data: patients, isLoading: loadingPatients } = usePatients()
   const { data: formTemplates, isLoading: loadingFormTemplates } =
@@ -143,6 +144,15 @@ export function ReportsPage() {
   const [overviewFilter, setOverviewFilter] = useState('')
   const { orderBy, order, handleRequestSort } =
     useSortState<OverviewSortKey>('fullName')
+
+  const patientOptions = useMemo(
+    () => (patients ?? []).map((p) => ({ value: p, label: p.full_name })),
+    [patients],
+  )
+  const formTemplateOptions = useMemo(
+    () => (formTemplates ?? []).map((t) => ({ value: t, label: t.title })),
+    [formTemplates],
+  )
 
   const getOverviewHaystack = useCallback((row: PatientEvolutionOverviewItem) => {
     return [
@@ -207,176 +217,132 @@ export function ReportsPage() {
   }, [evoReport.data, evoFrom, evoTo])
 
   return (
-    <Box>
-      <PageBreadcrumbs
-        items={[
+    <div>
+      <PageHeader
+        breadcrumbs={[
           { label: 'Painel', to: '/' },
           { label: 'Relatórios' },
         ]}
+        title="Relatórios"
       />
-      <Typography variant="h4" component="h2" gutterBottom>
-        Relatórios
-      </Typography>
       <ApiConfigAlert />
 
-      <Tabs
-        value={tab}
-        onChange={(_, v) => setTab(v)}
-        variant="scrollable"
-        scrollButtons="auto"
-        allowScrollButtonsMobile
-        sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}
-      >
-        <Tab label="Evolução por paciente" />
-        <Tab label="Todos os pacientes" />
-        <Tab label="Resumo da clínica" />
-        <Tab label="Formulários respondidos" />
-        <Tab label="Fluxo de caixa" />
-      </Tabs>
+      <Tabs value={tab} onValueChange={setTab} className="space-y-4">
+        <TabsList className="h-auto w-full flex-wrap justify-start gap-1">
+          <TabsTrigger value="0">Evolução por paciente</TabsTrigger>
+          <TabsTrigger value="1">Todos os pacientes</TabsTrigger>
+          <TabsTrigger value="2">Resumo da clínica</TabsTrigger>
+          <TabsTrigger value="3">Formulários respondidos</TabsTrigger>
+          <TabsTrigger value="4">Fluxo de caixa</TabsTrigger>
+        </TabsList>
 
-      {tab === 0 ? (
-        <Box>
-          <Grid container spacing={2} sx={{ mb: 2 }}>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Autocomplete
-                options={patients ?? []}
+        <TabsContent value="0" className="mt-0">
+          <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-12">
+            <div className="md:col-span-6">
+              <FilterableSelect
+                label="Paciente"
+                placeholder="Selecionar…"
+                emptyLabel="Selecionar…"
+                allowClear={false}
                 loading={loadingPatients}
+                options={patientOptions}
                 value={patient}
-                onChange={(_, v) => setPatient(v)}
-                getOptionLabel={(p) => p.full_name}
-                isOptionEqualToValue={(a, b) => a.id === b.id}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Paciente"
-                    placeholder="Selecionar…"
-                  />
-                )}
+                onChange={setPatient}
+                getOptionKey={(p) => p.id}
               />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <TextField
-                label="De"
+            </div>
+            <div className="space-y-1.5 md:col-span-3">
+              <Label htmlFor="evo-from">De</Label>
+              <Input
+                id="evo-from"
                 type="date"
                 value={evoFrom}
                 onChange={(e) => setEvoFrom(e.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
-                fullWidth
               />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <TextField
-                label="Até"
+            </div>
+            <div className="space-y-1.5 md:col-span-3">
+              <Label htmlFor="evo-to">Até</Label>
+              <Input
+                id="evo-to"
                 type="date"
                 value={evoTo}
                 onChange={(e) => setEvoTo(e.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
-                fullWidth
               />
-            </Grid>
-          </Grid>
+            </div>
+          </div>
 
           {!patient ? (
-            <Typography color="text.secondary">
-              Escolha um paciente para ver o relatório de evolução.
-            </Typography>
+            <EmptyState title="Escolha um paciente para ver o relatório de evolução." />
           ) : evoReport.isLoading ? (
-            <CircularProgress />
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
           ) : evoReport.isError ? (
-            <Alert severity="error">
-              {(evoReport.error as Error).message}
+            <Alert variant="destructive">
+              <AlertDescription>{(evoReport.error as Error).message}</AlertDescription>
             </Alert>
           ) : (
             <>
               {evoByDay.some((p) => p.count > 0) ? (
-                <Card variant="outlined" sx={{ mb: 2 }}>
-                  <CardContent>
-                    <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                      Registos por dia
-                    </Typography>
-                    <LineChart
-                      height={240}
-                      margin={{ left: 36, right: 8, top: 8, bottom: 24 }}
-                      xAxis={[
-                        {
-                          scaleType: 'point',
-                          data: evoByDay.map((p) => shortDate(p.date)),
-                          tickLabelStyle: { fontSize: 10 },
-                        },
-                      ]}
-                      series={[
-                        {
-                          data: evoByDay.map((p) => p.count),
-                          label: 'Registos',
-                          color: theme.palette.primary.main,
-                          area: true,
-                          showMark: true,
-                        },
-                      ]}
-                      grid={{ vertical: true, horizontal: true }}
-                      hideLegend
-                    />
-                  </CardContent>
-                </Card>
+                <GlassPanel className="mb-4">
+                  <p className="mb-3 font-semibold">Registos por dia</p>
+                  <GlassAreaChart
+                    height={240}
+                    labels={evoByDay.map((p) => shortDate(p.date))}
+                    values={evoByDay.map((p) => p.count)}
+                    color={chartColors.primary}
+                    valueLabel="Registos"
+                  />
+                </GlassPanel>
               ) : null}
 
               {(evoReport.data ?? []).length === 0 ? (
-                <Typography color="text.secondary">
-                  Sem registos de evolução neste período.
-                </Typography>
+                <EmptyState title="Sem registos de evolução neste período." />
               ) : (
-                <Grid container spacing={2}>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {(evoReport.data ?? []).map((row) => (
-                    <Grid key={row.id} size={{ xs: 12, md: 6 }}>
-                      <Card variant="outlined" sx={{ borderRadius: 2, height: '100%' }}>
-                        <CardContent>
-                          <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
-                            {row.entry_date as string}
-                          </Typography>
-                          <RichTextContent
-                            content={(row.content as string) || ''}
-                            variant="body2"
-                          />
-                        </CardContent>
-                      </Card>
-                    </Grid>
+                    <GlassPanel key={row.id} className="h-full">
+                      <p className="mb-2 text-xs text-muted-foreground">
+                        {row.entry_date as string}
+                      </p>
+                      <RichTextContent
+                        content={(row.content as string) || ''}
+                        variant="body2"
+                      />
+                    </GlassPanel>
                   ))}
-                </Grid>
+                </div>
               )}
             </>
           )}
-        </Box>
-      ) : null}
+        </TabsContent>
 
-      {tab === 1 ? (
-        <Box>
-          <TextField
-            placeholder="Pesquisar…"
-            value={overviewFilter}
-            onChange={(e) => setOverviewFilter(e.target.value)}
-            size="small"
-            fullWidth
-            sx={{ mb: 2, maxWidth: 480 }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" color="action" />
-                </InputAdornment>
-              ),
-            }}
-          />
-          {overview.isLoading ? <CircularProgress /> : null}
+        <TabsContent value="1" className="mt-0">
+          <div className="relative mb-4 max-w-md">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Pesquisar…"
+              value={overviewFilter}
+              onChange={(e) => setOverviewFilter(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          {overview.isLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : null}
           {overview.isError ? (
-            <Alert severity="error">
-              {(overview.error as Error).message}
+            <Alert variant="destructive">
+              <AlertDescription>{(overview.error as Error).message}</AlertDescription>
             </Alert>
           ) : null}
           {overview.data ? (
-            <Box>
-              <Stack direction="row" flexWrap="wrap" alignItems="center" gap={1} sx={{ mb: 2 }}>
-                <Typography variant="body2" color="text.secondary" sx={{ width: { xs: '100%', sm: 'auto' } }}>
+            <div>
+              <div className="mb-4 flex flex-wrap items-center gap-2">
+                <span className="w-full text-sm text-muted-foreground sm:w-auto">
                   Ordenar por
-                </Typography>
+                </span>
                 {(
                   [
                     { key: 'fullName' as const, label: 'Paciente' },
@@ -386,387 +352,313 @@ export function ReportsPage() {
                     { key: 'evolutionCount' as const, label: 'N.º' },
                   ] as const
                 ).map(({ key, label }) => (
-                  <Chip
+                  <Badge
                     key={key}
-                    size="small"
-                    label={`${label}${orderBy === key ? (order === 'asc' ? ' ↑' : ' ↓') : ''}`}
+                    variant={orderBy === key ? 'default' : 'outline'}
+                    className="cursor-pointer"
                     onClick={() => handleRequestSort(key)}
-                    color={orderBy === key ? 'primary' : 'default'}
-                    variant={orderBy === key ? 'filled' : 'outlined'}
-                  />
+                  >
+                    {label}
+                    {orderBy === key ? (order === 'asc' ? ' ↑' : ' ↓') : ''}
+                  </Badge>
                 ))}
-              </Stack>
-              <Grid container spacing={2}>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {overviewRows.map((row) => (
-                  <Grid key={row.patientId} size={{ xs: 12, sm: 6, lg: 4 }}>
-                    <Card
-                      variant="outlined"
-                      sx={{
-                        height: '100%',
-                        borderRadius: 2,
-                        transition: (t) =>
-                          t.transitions.create(['box-shadow', 'border-color'], {
-                            duration: t.transitions.duration.shorter,
-                          }),
-                        '&:hover': {
-                          borderColor: 'primary.light',
-                          boxShadow: (t) => t.shadows[2],
-                        },
-                      }}
+                  <GlassPanel
+                    key={row.patientId}
+                    className="lift h-full transition-colors hover:border-primary/35"
+                  >
+                    <Link
+                      to={`/patients/${row.patientId}`}
+                      className="font-semibold text-foreground no-underline hover:text-primary"
                     >
-                      <CardContent>
-                        <Typography
-                          variant="subtitle1"
-                          component={Link}
-                          to={`/patients/${row.patientId}`}
-                          sx={{
-                            fontWeight: 600,
-                            color: 'text.primary',
-                            textDecoration: 'none',
-                            '&:hover': { color: 'primary.main' },
-                          }}
-                        >
-                          {row.fullName}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                          Motivo: {row.consultationReason?.trim() || '—'}
-                        </Typography>
-                        <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mt: 1.5 }}>
-                          <Chip size="small" variant="outlined" label={`1.ª: ${row.firstEvolutionDate ?? '—'}`} />
-                          <Chip size="small" variant="outlined" label={`Última: ${row.lastEvolutionDate ?? '—'}`} />
-                          <Chip
-                            size="small"
-                            color="primary"
-                            variant="outlined"
-                            label={`${row.evolutionCount} evoluções`}
-                          />
-                        </Stack>
-                      </CardContent>
-                    </Card>
-                  </Grid>
+                      {row.fullName}
+                    </Link>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      Motivo: {row.consultationReason?.trim() || '—'}
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Badge variant="outline">
+                        1.ª: {row.firstEvolutionDate ?? '—'}
+                      </Badge>
+                      <Badge variant="outline">
+                        Última: {row.lastEvolutionDate ?? '—'}
+                      </Badge>
+                      <Badge variant="outline">
+                        {row.evolutionCount} evoluções
+                      </Badge>
+                    </div>
+                  </GlassPanel>
                 ))}
-              </Grid>
-            </Box>
+              </div>
+            </div>
           ) : null}
-        </Box>
-      ) : null}
+        </TabsContent>
 
-      {tab === 2 ? (
-        <Box>
-          <Grid container spacing={2} sx={{ mb: 2 }}>
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-              <TextField
-                label="De"
+        <TabsContent value="2" className="mt-0">
+          <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-12">
+            <div className="space-y-1.5 md:col-span-4">
+              <Label htmlFor="clinic-from">De</Label>
+              <Input
+                id="clinic-from"
                 type="date"
                 value={clinicFrom}
                 onChange={(e) => setClinicFrom(e.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
-                fullWidth
               />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-              <TextField
-                label="Até"
+            </div>
+            <div className="space-y-1.5 md:col-span-4">
+              <Label htmlFor="clinic-to">Até</Label>
+              <Input
+                id="clinic-to"
                 type="date"
                 value={clinicTo}
                 onChange={(e) => setClinicTo(e.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
-                fullWidth
               />
-            </Grid>
-          </Grid>
+            </div>
+          </div>
 
           {clinicSummary.isLoading || clinicDaily.isLoading ? (
-            <CircularProgress />
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
           ) : null}
           {clinicSummary.isError ? (
-            <Alert severity="error">
-              {(clinicSummary.error as Error).message}
+            <Alert variant="destructive">
+              <AlertDescription>{(clinicSummary.error as Error).message}</AlertDescription>
             </Alert>
           ) : null}
           {clinicSummary.data ? (
             <>
-              <Grid container spacing={2} sx={{ mb: 2 }}>
-                <Grid size={{ xs: 12, sm: 4 }}>
-                  <Card variant="outlined">
-                    <CardContent>
-                      <Typography color="text.secondary" variant="body2">
-                        Novos pacientes
-                      </Typography>
-                      <Typography variant="h5">
-                        {clinicSummary.data.newPatients}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid size={{ xs: 12, sm: 4 }}>
-                  <Card variant="outlined">
-                    <CardContent>
-                      <Typography color="text.secondary" variant="body2">
-                        Registos de evolução
-                      </Typography>
-                      <Typography variant="h5">
-                        {clinicSummary.data.evolutionEntries}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid size={{ xs: 12, sm: 4 }}>
-                  <Card variant="outlined">
-                    <CardContent>
-                      <Typography color="text.secondary" variant="body2">
-                        Respostas a formulários
-                      </Typography>
-                      <Typography variant="h5">
-                        {clinicSummary.data.formSubmissions}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              </Grid>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                {[
+                  { label: 'Novos pacientes', value: clinicSummary.data.newPatients },
+                  { label: 'Registos de evolução', value: clinicSummary.data.evolutionEntries },
+                  { label: 'Respostas a formulários', value: clinicSummary.data.formSubmissions },
+                ].map((stat) => (
+                  <GlassPanel key={stat.label} className="py-4">
+                    <p className="text-sm text-muted-foreground">{stat.label}</p>
+                    <p className="display mt-1 text-2xl font-semibold">{stat.value}</p>
+                  </GlassPanel>
+                ))}
+              </div>
+              <p className="mb-4 text-sm text-muted-foreground">
                 Período: {clinicSummary.data.fromYmd} a {clinicSummary.data.toYmd}.
                 Os totais refletem a atividade registada na base de dados neste
                 intervalo.
-              </Typography>
+              </p>
             </>
           ) : null}
 
           {clinicDaily.data && clinicDaily.data.length > 0 ? (
-            <Card variant="outlined">
-              <CardContent>
-                <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                  Evoluções por dia no período
-                </Typography>
-                <BarChart
-                  height={280}
-                  margin={{ left: 40, right: 12, top: 8, bottom: 48 }}
-                  xAxis={[
-                    {
-                      scaleType: 'band',
-                      data: clinicDaily.data.map((p) => shortDate(p.date)),
-                      tickLabelStyle: { fontSize: 9, angle: -45, textAnchor: 'end' },
-                    },
-                  ]}
-                  series={[
-                    {
-                      data: clinicDaily.data.map((p) => p.count),
-                      label: 'Evoluções',
-                      color: theme.palette.primary.main,
-                    },
-                  ]}
-                  grid={{ horizontal: true }}
-                  hideLegend
-                />
-              </CardContent>
-            </Card>
+            <GlassPanel>
+              <p className="mb-3 font-semibold">Evoluções por dia no período</p>
+              <GlassBarChart
+                labels={clinicDaily.data.map((p) => shortDate(p.date))}
+                series={[
+                  {
+                    key: 'evolutions',
+                    label: 'Evoluções',
+                    values: clinicDaily.data.map((p) => p.count),
+                    color: chartColors.primary,
+                  },
+                ]}
+                angledLabels
+              />
+            </GlassPanel>
           ) : null}
-        </Box>
-      ) : null}
+        </TabsContent>
 
-      {tab === 3 ? (
-        <Box>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        <TabsContent value="3" className="mt-0">
+          <p className="mb-4 text-sm text-muted-foreground">
             Escolha o formulário (obrigatório). O paciente e o período são
             opcionais: sem período são listadas todas as respostas desse modelo;
             com paciente, apenas respostas enviadas por links associados a esse
             paciente.
-          </Typography>
-          <Grid container spacing={2} sx={{ mb: 2 }}>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Autocomplete
-                options={formTemplates ?? []}
+          </p>
+          <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-12">
+            <div className="md:col-span-6">
+              <FilterableSelect
+                label="Formulário"
+                placeholder="Selecionar modelo…"
+                allowClear={false}
+                required
                 loading={loadingFormTemplates}
+                options={formTemplateOptions}
                 value={formTemplate}
-                onChange={(_, v) => setFormTemplate(v)}
-                getOptionLabel={(t) => t.title}
-                isOptionEqualToValue={(a, b) => a.id === b.id}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Formulário"
-                    placeholder="Selecionar modelo…"
-                    required
-                  />
-                )}
+                onChange={setFormTemplate}
+                getOptionKey={(t) => t.id}
               />
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Autocomplete
-                options={patients ?? []}
+            </div>
+            <div className="md:col-span-6">
+              <FilterableSelect
+                label="Paciente (opcional)"
+                placeholder="Qualquer paciente / link geral"
+                emptyLabel="Qualquer paciente / link geral"
                 loading={loadingPatients}
+                options={patientOptions}
                 value={formReportPatient}
-                onChange={(_, v) => setFormReportPatient(v)}
-                getOptionLabel={(p) => p.full_name}
-                isOptionEqualToValue={(a, b) => a.id === b.id}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Paciente (opcional)"
-                    placeholder="Qualquer paciente / link geral"
-                  />
-                )}
+                onChange={setFormReportPatient}
+                getOptionKey={(p) => p.id}
               />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <TextField
-                label="Período — de (opcional)"
+            </div>
+            <div className="space-y-1.5 md:col-span-3">
+              <Label htmlFor="form-from">Período — de (opcional)</Label>
+              <Input
+                id="form-from"
                 type="date"
                 value={formFrom}
                 onChange={(e) => setFormFrom(e.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
-                fullWidth
               />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <TextField
-                label="Período — até (opcional)"
+            </div>
+            <div className="space-y-1.5 md:col-span-3">
+              <Label htmlFor="form-to">Período — até (opcional)</Label>
+              <Input
+                id="form-to"
                 type="date"
                 value={formTo}
                 onChange={(e) => setFormTo(e.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
-                fullWidth
               />
-            </Grid>
-          </Grid>
+            </div>
+          </div>
 
           {formPeriodPartial ? (
-            <Alert severity="warning" sx={{ mb: 2 }}>
-              Preencha as duas datas do período ou deixe as duas em branco.
+            <Alert variant="warning" className="mb-4">
+              <AlertDescription>
+                Preencha as duas datas do período ou deixe as duas em branco.
+              </AlertDescription>
             </Alert>
           ) : null}
           {formPeriodInvalid ? (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              A data inicial não pode ser posterior à data final.
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>
+                A data inicial não pode ser posterior à data final.
+              </AlertDescription>
             </Alert>
           ) : null}
 
           {!formTemplate ? (
-            <Typography color="text.secondary">
-              Selecione um formulário para carregar as respostas.
-            </Typography>
+            <EmptyState title="Selecione um formulário para carregar as respostas." />
           ) : formSubmissionsReport.isLoading ? (
-            <CircularProgress />
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
           ) : formSubmissionsReport.isError ? (
-            <Alert severity="error">
-              {(formSubmissionsReport.error as Error).message}
+            <Alert variant="destructive">
+              <AlertDescription>
+                {(formSubmissionsReport.error as Error).message}
+              </AlertDescription>
             </Alert>
           ) : (formSubmissionsReport.data ?? []).length === 0 ? (
-            <Typography color="text.secondary">
-              Nenhuma resposta encontrada com estes critérios.
-            </Typography>
+            <EmptyState title="Nenhuma resposta encontrada com estes critérios." />
           ) : (
-            <Grid container spacing={2}>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {(formSubmissionsReport.data ?? []).map((row) => (
-                <Grid key={row.id} size={{ xs: 12, md: 6 }}>
-                  <Card variant="outlined" sx={{ borderRadius: 2, height: '100%' }}>
-                    <CardContent>
-                      <Typography variant="caption" color="text.secondary" display="block">
-                        {new Date(row.created_at).toLocaleString('pt-PT', {
-                          dateStyle: 'short',
-                          timeStyle: 'short',
-                        })}
-                      </Typography>
-                      <Typography variant="body2" fontWeight={600} sx={{ mt: 0.5 }}>
-                        {row.patientName ?? 'Sem paciente associado'}
-                      </Typography>
-                      <Typography variant="body2" sx={{ mt: 1, wordBreak: 'break-word' }}>
-                        {formatSubmissionAnswersSummary(formTemplate.schema, row.answers)}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
+                <GlassPanel key={row.id} className="h-full">
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(row.created_at).toLocaleString('pt-PT', {
+                      dateStyle: 'short',
+                      timeStyle: 'short',
+                    })}
+                  </p>
+                  <p className="mt-1 text-sm font-semibold">
+                    {row.patientName ?? 'Sem paciente associado'}
+                  </p>
+                  <p className="mt-2 break-words text-sm">
+                    {formatSubmissionAnswersSummary(formTemplate.schema, row.answers)}
+                  </p>
+                </GlassPanel>
               ))}
-            </Grid>
+            </div>
           )}
-        </Box>
-      ) : null}
+        </TabsContent>
 
-      {tab === 4 ? (
-        <Box>
-          <Grid container spacing={2} sx={{ mb: 2 }} alignItems="center">
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <TextField
-                label="De"
+        <TabsContent value="4" className="mt-0">
+          <div className="mb-4 grid grid-cols-1 items-end gap-4 sm:grid-cols-2 md:grid-cols-12">
+            <div className="space-y-1.5 md:col-span-3">
+              <Label htmlFor="cash-from">De</Label>
+              <Input
+                id="cash-from"
                 type="date"
                 value={cashFrom}
                 onChange={(e) => setCashFrom(e.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
-                fullWidth
               />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <TextField
-                label="Até"
+            </div>
+            <div className="space-y-1.5 md:col-span-3">
+              <Label htmlFor="cash-to">Até</Label>
+              <Input
+                id="cash-to"
                 type="date"
                 value={cashTo}
                 onChange={(e) => setCashTo(e.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
-                fullWidth
               />
-            </Grid>
-            <Grid size={{ xs: 12, md: 4 }}>
-              <Autocomplete
-                options={patients ?? []}
+            </div>
+            <div className="md:col-span-4">
+              <FilterableSelect
+                label="Paciente (opcional)"
+                placeholder="Todos os pacientes"
+                emptyLabel="Todos os pacientes"
                 loading={loadingPatients}
+                options={patientOptions}
                 value={cashPatient}
-                onChange={(_, v) => setCashPatient(v)}
-                getOptionLabel={(p) => p.full_name}
-                isOptionEqualToValue={(a, b) => a.id === b.id}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Paciente (opcional)"
-                    placeholder="Todos os pacientes"
-                  />
-                )}
+                onChange={setCashPatient}
+                getOptionKey={(p) => p.id}
               />
-            </Grid>
-            <Grid size={{ xs: 12, md: 2 }}>
+            </div>
+            <div className="relative md:col-span-2">
               <Button
-                variant="outlined"
-                fullWidth
-                endIcon={<ArrowDropDownIcon />}
+                type="button"
+                variant="outline"
+                className="w-full"
                 disabled={cashFlowRows.length === 0 || cashPeriodInvalid}
-                onClick={(e) => setExportMenuAnchor(e.currentTarget)}
+                onClick={() => setExportOpen((v) => !v)}
               >
                 Exportar
+                <ChevronDown className="h-4 w-4" />
               </Button>
-              <Menu
-                anchorEl={exportMenuAnchor}
-                open={Boolean(exportMenuAnchor)}
-                onClose={() => setExportMenuAnchor(null)}
-              >
-                <MenuItem
-                  onClick={() => {
-                    exportCashFlowPdf(cashFlowRows, cashExportMeta)
-                    setExportMenuAnchor(null)
-                  }}
-                >
-                  PDF
-                </MenuItem>
-                <MenuItem
-                  onClick={() => {
-                    exportCashFlowCsv(cashFlowRows, cashExportMeta)
-                    setExportMenuAnchor(null)
-                  }}
-                >
-                  CSV
-                </MenuItem>
-              </Menu>
-            </Grid>
-          </Grid>
+              {exportOpen ? (
+                <div className="absolute right-0 top-full z-50 mt-1 min-w-[8rem] rounded-xl border glass-strong p-1 shadow-md">
+                  <button
+                    type="button"
+                    className="flex w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+                    onClick={() => {
+                      exportCashFlowPdf(cashFlowRows, cashExportMeta)
+                      setExportOpen(false)
+                    }}
+                  >
+                    PDF
+                  </button>
+                  <button
+                    type="button"
+                    className="flex w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+                    onClick={() => {
+                      exportCashFlowCsv(cashFlowRows, cashExportMeta)
+                      setExportOpen(false)
+                    }}
+                  >
+                    CSV
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          </div>
 
           {cashPeriodInvalid ? (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              A data inicial não pode ser posterior à data final.
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>
+                A data inicial não pode ser posterior à data final.
+              </AlertDescription>
             </Alert>
           ) : null}
 
-          {cashFlowReport.isLoading ? <CircularProgress /> : null}
+          {cashFlowReport.isLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : null}
           {cashFlowReport.isError ? (
-            <Alert severity="error">
-              {(cashFlowReport.error as Error).message}
+            <Alert variant="destructive">
+              <AlertDescription>{(cashFlowReport.error as Error).message}</AlertDescription>
             </Alert>
           ) : null}
 
@@ -774,144 +666,84 @@ export function ReportsPage() {
           !cashFlowReport.isError &&
           !cashPeriodInvalid ? (
             <>
-              <Grid container spacing={2} sx={{ mb: 2 }}>
-                <Grid size={{ xs: 12, sm: 4 }}>
-                  <Card variant="outlined">
-                    <CardContent>
-                      <Typography color="text.secondary" variant="body2">
-                        Total de entradas
-                      </Typography>
-                      <Typography
-                        variant="h5"
-                        sx={{ color: 'success.main', mt: 0.5 }}
-                      >
-                        {formatMoney(cashFlowTotals.entradas)}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid size={{ xs: 12, sm: 4 }}>
-                  <Card variant="outlined">
-                    <CardContent>
-                      <Typography color="text.secondary" variant="body2">
-                        Total de saídas
-                      </Typography>
-                      <Typography
-                        variant="h5"
-                        sx={{ color: 'error.main', mt: 0.5 }}
-                      >
-                        {formatMoney(cashFlowTotals.saidas)}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid size={{ xs: 12, sm: 4 }}>
-                  <Card variant="outlined">
-                    <CardContent>
-                      <Typography color="text.secondary" variant="body2">
-                        Saldo líquido
-                      </Typography>
-                      <Typography variant="h5" sx={{ mt: 0.5 }}>
-                        {formatMoney(cashFlowTotals.saldo)}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              </Grid>
+              <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <GlassPanel className="py-4">
+                  <p className="text-sm text-muted-foreground">Total de entradas</p>
+                  <p className="display mt-1 text-2xl font-semibold text-chart-2">
+                    {formatMoney(cashFlowTotals.entradas)}
+                  </p>
+                </GlassPanel>
+                <GlassPanel className="py-4">
+                  <p className="text-sm text-muted-foreground">Total de saídas</p>
+                  <p className="display mt-1 text-2xl font-semibold text-destructive">
+                    {formatMoney(cashFlowTotals.saidas)}
+                  </p>
+                </GlassPanel>
+                <GlassPanel className="py-4">
+                  <p className="text-sm text-muted-foreground">Saldo líquido</p>
+                  <p className="display mt-1 text-2xl font-semibold">
+                    {formatMoney(cashFlowTotals.saldo)}
+                  </p>
+                </GlassPanel>
+              </div>
 
               {cashFlowDaily.length > 0 ? (
-                <Card variant="outlined" sx={{ mb: 2 }}>
-                  <CardContent>
-                    <Typography
-                      variant="subtitle1"
-                      fontWeight={600}
-                      gutterBottom
-                    >
-                      Movimento por dia no período
-                    </Typography>
-                    <BarChart
-                      height={280}
-                      margin={{ left: 48, right: 12, top: 8, bottom: 48 }}
-                      xAxis={[
-                        {
-                          scaleType: 'band',
-                          data: cashFlowDaily.map((p) => shortDate(p.date)),
-                          tickLabelStyle: {
-                            fontSize: 9,
-                            angle: -45,
-                            textAnchor: 'end',
-                          },
-                        },
-                      ]}
-                      series={[
-                        {
-                          data: cashFlowDaily.map((p) => p.entradas),
-                          label: 'Entradas',
-                          color: theme.palette.success.main,
-                        },
-                        {
-                          data: cashFlowDaily.map((p) => p.saidas),
-                          label: 'Saídas',
-                          color: theme.palette.error.main,
-                        },
-                      ]}
-                      grid={{ horizontal: true }}
-                    />
-                  </CardContent>
-                </Card>
+                <GlassPanel className="mb-4">
+                  <p className="mb-3 font-semibold">Movimento por dia no período</p>
+                  <GlassBarChart
+                    labels={cashFlowDaily.map((p) => shortDate(p.date))}
+                    series={[
+                      {
+                        key: 'entradas',
+                        label: 'Entradas',
+                        values: cashFlowDaily.map((p) => p.entradas),
+                        color: chartColors.success,
+                      },
+                      {
+                        key: 'saidas',
+                        label: 'Saídas',
+                        values: cashFlowDaily.map((p) => p.saidas),
+                        color: chartColors.error,
+                      },
+                    ]}
+                    angledLabels
+                    showLegend
+                  />
+                </GlassPanel>
               ) : null}
 
               {cashFlowRows.length === 0 ? (
-                <Typography color="text.secondary">
-                  Sem lançamentos financeiros neste período.
-                </Typography>
+                <EmptyState title="Sem lançamentos financeiros neste período." />
               ) : (
-                <Grid container spacing={2}>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
                   {cashFlowRows.map((row) => (
-                    <Grid key={row.id} size={{ xs: 12, sm: 6, md: 4 }}>
-                      <Card
-                        variant="outlined"
-                        sx={{ borderRadius: 2, height: '100%' }}
+                    <GlassPanel key={row.id} className="h-full">
+                      <p
+                        className={cn(
+                          'text-sm font-semibold',
+                          row.type === 'entrada' ? 'text-chart-2' : 'text-destructive',
+                        )}
                       >
-                        <CardContent>
-                          <Typography
-                            variant="body2"
-                            fontWeight={600}
-                            sx={{
-                              color:
-                                row.type === 'entrada'
-                                  ? 'success.main'
-                                  : 'error.main',
-                            }}
-                          >
-                            {row.type === 'entrada' ? 'Entrada' : 'Saída'}
-                          </Typography>
-                          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                            {formatMoney(row.amount)}
-                          </Typography>
-                          <Typography variant="body2" sx={{ mt: 0.5 }}>
-                            {row.description.trim() || '—'}
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            sx={{ mt: 1 }}
-                          >
-                            {formatEntryDate(row.entry_date)}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {row.patients?.full_name?.trim() || 'Sem paciente'}
-                          </Typography>
-                        </CardContent>
-                      </Card>
-                    </Grid>
+                        {row.type === 'entrada' ? 'Entrada' : 'Saída'}
+                      </p>
+                      <p className="display text-xl font-semibold">
+                        {formatMoney(row.amount)}
+                      </p>
+                      <p className="mt-1 text-sm">{row.description.trim() || '—'}</p>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        {formatEntryDate(row.entry_date)}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {row.patients?.full_name?.trim() || 'Sem paciente'}
+                      </p>
+                    </GlassPanel>
                   ))}
-                </Grid>
+                </div>
               )}
             </>
           ) : null}
-        </Box>
-      ) : null}
-    </Box>
+        </TabsContent>
+      </Tabs>
+    </div>
   )
 }

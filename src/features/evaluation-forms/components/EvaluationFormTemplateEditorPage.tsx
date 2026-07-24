@@ -1,26 +1,24 @@
-import AddIcon from '@mui/icons-material/Add'
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material'
+import { Loader2, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
-import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
-import { ApiConfigAlert } from '../../../components/ApiConfigAlert'
-import { useToast } from '../../../components/toast'
-import { isOptionFieldType, validateOptionFields } from '../../../lib/formFieldValidation'
-import type { FormFieldSchema } from '../../../types/database.types'
+import { PageHeader } from '@/components/AppShell'
+import { ApiConfigAlert } from '@/components/ApiConfigAlert'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
+import { useToast } from '@/components/toast'
+import { isOptionFieldType, validateOptionFields } from '@/lib/formFieldValidation'
+import type { FormFieldSchema } from '@/types/database.types'
 import {
   useEvaluationFormTemplate,
   useEvaluationFormTemplateMutations,
@@ -44,13 +42,26 @@ export function EvaluationFormTemplateEditorPage() {
   )
 
   if (!isNew && isLoading) {
-    return <CircularProgress aria-label="A carregar modelo" />
+    return (
+      <Loader2
+        className="h-6 w-6 animate-spin text-muted-foreground"
+        aria-label="A carregar modelo"
+      />
+    )
   }
   if (!isNew && isError) {
-    return <Alert severity="error">{(error as Error).message}</Alert>
+    return (
+      <Alert variant="destructive">
+        <AlertDescription>{(error as Error).message}</AlertDescription>
+      </Alert>
+    )
   }
   if (!isNew && !existing) {
-    return <Alert severity="warning">Modelo não encontrado.</Alert>
+    return (
+      <Alert variant="warning">
+        <AlertDescription>Modelo não encontrado.</AlertDescription>
+      </Alert>
+    )
   }
 
   if (isNew) {
@@ -86,7 +97,7 @@ function TemplateEditorFields({
   const [title, setTitle] = useState(() => initial?.title ?? 'Novo modelo de ficha')
   const [description, setDescription] = useState(() => initial?.description ?? '')
   const [fields, setFields] = useState<FormFieldSchema[]>(() =>
-    initial ? parseEvaluationSchema(initial.schema as import('../../../types/database.types').Json) : [newField()],
+    initial ? parseEvaluationSchema(initial.schema as import('@/types/database.types').Json) : [newField()],
   )
 
   const updateField = (index: number, patch: Partial<FormFieldSchema>) => {
@@ -148,113 +159,120 @@ function TemplateEditorFields({
       ]
 
   return (
-    <Box>
-      <PageBreadcrumbs items={crumbs} />
-      <Typography variant="h4" component="h2" gutterBottom>
-        {isNew ? 'Novo modelo de ficha' : 'Editar modelo de ficha'}
-      </Typography>
+    <div>
+      <PageHeader
+        breadcrumbs={crumbs}
+        title={isNew ? 'Novo modelo de ficha' : 'Editar modelo de ficha'}
+      />
       <ApiConfigAlert />
       {err ? (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {(err as Error).message}
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>{(err as Error).message}</AlertDescription>
         </Alert>
       ) : null}
-      <Box component="form" onSubmit={handleSubmit}>
-        <Stack spacing={3} sx={{ maxWidth: { xs: '100%', sm: 720 }, px: { xs: 0, sm: 0 } }}>
-          <TextField
-            label="Título do modelo"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-            fullWidth
-          />
-          <TextField
-            label="Descrição (opcional)"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            fullWidth
-            multiline
-            minRows={2}
-          />
-          <Stack direction="row" alignItems="center" justifyContent="space-between">
-            <Typography variant="subtitle1">Campos da ficha</Typography>
+      <form onSubmit={handleSubmit}>
+        <div className="max-w-2xl space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="template-title">Título do modelo</Label>
+            <Input
+              id="template-title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="template-description">Descrição (opcional)</Label>
+            <Textarea
+              id="template-description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={2}
+            />
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h3 className="text-base font-semibold text-foreground">Campos da ficha</h3>
             <Button
               type="button"
-              startIcon={<AddIcon />}
+              variant="outline"
               onClick={() => setFields((f) => [...f, newField()])}
             >
+              <Plus className="h-4 w-4" />
               Adicionar campo
             </Button>
-          </Stack>
+          </div>
           {fields.map((field, index) => (
-            <Stack
+            <div
               key={field.id}
-              direction={{ xs: 'column', sm: 'row' }}
-              spacing={2}
-              alignItems={{ sm: 'flex-start' }}
+              className="flex flex-col gap-3 sm:flex-row sm:items-start"
             >
-              <TextField
-                label="Texto da pergunta"
-                value={field.label}
-                onChange={(e) => updateField(index, { label: e.target.value })}
-                fullWidth
-                sx={{ flex: 1 }}
-              />
-              <FormControl sx={{ minWidth: 160 }}>
-                <InputLabel id={`type-${field.id}`}>Tipo</InputLabel>
+              <div className="min-w-0 flex-1 space-y-2">
+                <Label htmlFor={`label-${field.id}`}>Texto da pergunta</Label>
+                <Input
+                  id={`label-${field.id}`}
+                  value={field.label}
+                  onChange={(e) => updateField(index, { label: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2 sm:w-40">
+                <Label htmlFor={`type-${field.id}`}>Tipo</Label>
                 <Select
-                  labelId={`type-${field.id}`}
-                  label="Tipo"
                   value={field.type}
-                  onChange={(e) =>
-                    updateField(index, {
-                      type: e.target.value as FormFieldSchema['type'],
-                    })
+                  onValueChange={(v) =>
+                    updateField(index, { type: v as FormFieldSchema['type'] })
                   }
                 >
-                  <MenuItem value="text">Texto curto</MenuItem>
-                  <MenuItem value="textarea">Texto longo</MenuItem>
-                  <MenuItem value="number">Número</MenuItem>
-                  <MenuItem value="date">Data</MenuItem>
-                  <MenuItem value="select">Escolha</MenuItem>
-                  <MenuItem value="multiselect">Múltipla escolha</MenuItem>
+                  <SelectTrigger id={`type-${field.id}`}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="text">Texto curto</SelectItem>
+                    <SelectItem value="textarea">Texto longo</SelectItem>
+                    <SelectItem value="number">Número</SelectItem>
+                    <SelectItem value="date">Data</SelectItem>
+                    <SelectItem value="select">Escolha</SelectItem>
+                    <SelectItem value="multiselect">Múltipla escolha</SelectItem>
+                  </SelectContent>
                 </Select>
-              </FormControl>
-              <TextField
-                label="Opções (separadas por vírgula)"
-                value={(field.options ?? []).join(', ')}
-                onChange={(e) =>
-                  updateField(index, {
-                    options: e.target.value
-                      .split(',')
-                      .map((s) => s.trim())
-                      .filter(Boolean),
-                  })
-                }
-                disabled={!isOptionFieldType(field.type)}
-                fullWidth
-                sx={{ flex: 1 }}
-              />
+              </div>
+              <div className="min-w-0 flex-1 space-y-2">
+                <Label htmlFor={`options-${field.id}`}>Opções (separadas por vírgula)</Label>
+                <Input
+                  id={`options-${field.id}`}
+                  value={(field.options ?? []).join(', ')}
+                  onChange={(e) =>
+                    updateField(index, {
+                      options: e.target.value
+                        .split(',')
+                        .map((s) => s.trim())
+                        .filter(Boolean),
+                    })
+                  }
+                  disabled={!isOptionFieldType(field.type)}
+                />
+              </div>
               <Button
                 type="button"
-                color="error"
+                variant="ghost"
+                size="icon"
+                className="mt-7 shrink-0 text-destructive"
                 aria-label="Remover campo"
                 onClick={() => removeField(index)}
               >
-                <DeleteOutlineIcon />
+                <Trash2 className="h-4 w-4" />
               </Button>
-            </Stack>
+            </div>
           ))}
-          <Stack direction="row" spacing={2}>
-            <Button type="submit" variant="contained" disabled={pending}>
+          <div className="flex flex-wrap gap-2">
+            <Button type="submit" disabled={pending}>
               Guardar
             </Button>
-            <Button component={Link} to="/evaluation-forms">
-              Voltar
+            <Button variant="outline" asChild>
+              <Link to="/evaluation-forms">Voltar</Link>
             </Button>
-          </Stack>
-        </Stack>
-      </Box>
-    </Box>
+          </div>
+        </div>
+      </form>
+    </div>
   )
 }

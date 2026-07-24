@@ -1,6 +1,11 @@
-import NavigateNextIcon from '@mui/icons-material/NavigateNext'
-import { Breadcrumbs, Link, Typography } from '@mui/material'
-import { Link as RouterLink } from 'react-router-dom'
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb'
 
 export type BreadcrumbItem = {
   label: string
@@ -15,38 +20,24 @@ export function PageBreadcrumbs({ items }: PageBreadcrumbsProps) {
   if (items.length === 0) return null
 
   return (
-    <Breadcrumbs
-      separator={<NavigateNextIcon fontSize="small" sx={{ opacity: 0.6 }} />}
-      aria-label="Navegação estrutural"
-      sx={{ mb: 2 }}
-    >
-      {items.map((item, i) => {
-        const isLast = i === items.length - 1
-        if (isLast || !item.to) {
+    <Breadcrumb className="mb-4">
+      <BreadcrumbList>
+        {items.map((item, i) => {
+          const isLast = i === items.length - 1
           return (
-            <Typography
-              key={`${item.label}-${i}`}
-              color="text.primary"
-              variant="body2"
-              fontWeight={isLast ? 600 : 400}
-            >
-              {item.label}
-            </Typography>
+            <span key={`${item.label}-${i}`} className="contents">
+              {i > 0 ? <BreadcrumbSeparator /> : null}
+              <BreadcrumbItem>
+                {isLast || !item.to ? (
+                  <BreadcrumbPage>{item.label}</BreadcrumbPage>
+                ) : (
+                  <BreadcrumbLink to={item.to}>{item.label}</BreadcrumbLink>
+                )}
+              </BreadcrumbItem>
+            </span>
           )
-        }
-        return (
-          <Link
-            key={item.to}
-            component={RouterLink}
-            to={item.to}
-            underline="hover"
-            color="inherit"
-            variant="body2"
-          >
-            {item.label}
-          </Link>
-        )
-      })}
-    </Breadcrumbs>
+        })}
+      </BreadcrumbList>
+    </Breadcrumb>
   )
 }

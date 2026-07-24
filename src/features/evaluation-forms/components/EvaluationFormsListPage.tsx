@@ -1,30 +1,22 @@
-import AddIcon from '@mui/icons-material/Add'
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
-import SearchIcon from '@mui/icons-material/Search'
-import {
-  Alert,
-  Box,
-  Button,
-  Chip,
-  Grid,
-  IconButton,
-  InputAdornment,
-  Stack,
-  TextField,
-  Tooltip,
-  Typography,
-} from '@mui/material'
+import { Plus, Pencil, Trash2, Search } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import { ConfirmDeleteDialog } from '../../../components/ConfirmDeleteDialog'
-import { ListCard } from '../../../components/ListCard'
-import { ListPageSkeleton } from '../../../components/ListPageSkeleton'
-import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
-import { ApiConfigAlert } from '../../../components/ApiConfigAlert'
-import { toastError, toastSuccess } from '../../../components/toast'
-import { useSortState, useTableFilterSort } from '../../../hooks/useTableFilterSort'
+import { EmptyState, PageHeader } from '@/components/AppShell'
+import { ApiConfigAlert } from '@/components/ApiConfigAlert'
+import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog'
+import { ListCard } from '@/components/ListCard'
+import { ListPageSkeleton } from '@/components/ListPageSkeleton'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import { toastError, toastSuccess } from '@/components/toast'
+import { useSortState, useTableFilterSort } from '@/hooks/useTableFilterSort'
 import {
   useEvaluationFormTemplateMutations,
   useEvaluationFormTemplates,
@@ -101,141 +93,117 @@ export function EvaluationFormsListPage() {
   }
 
   return (
-    <Box>
-      <PageBreadcrumbs
-        items={[
+    <div>
+      <PageHeader
+        breadcrumbs={[
           { label: 'Painel', to: '/' },
           { label: 'Fichas de avaliação' },
         ]}
+        title="Fichas de avaliação"
+        subtitle="Crie modelos de ficha para diferentes áreas de atendimento. Depois vincule uma ficha a cada paciente conforme necessário."
+        actions={
+          <Button asChild className="lift w-full sm:w-auto">
+            <Link to="/evaluation-forms/new">
+              <Plus className="h-4 w-4" />
+              Novo modelo
+            </Link>
+          </Button>
+        }
       />
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        justifyContent="space-between"
-        alignItems={{ xs: 'stretch', sm: 'center' }}
-        spacing={2}
-        sx={{ mb: 2 }}
-      >
-        <Typography variant="h4" component="h2">
-          Fichas de avaliação
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          component={Link}
-          to="/evaluation-forms/new"
-          sx={{ alignSelf: { xs: 'stretch', sm: 'auto' } }}
-        >
-          Novo modelo
-        </Button>
-      </Stack>
-
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        Crie modelos de ficha para diferentes áreas de atendimento. Depois vincule
-        uma ficha a cada paciente conforme necessário.
-      </Typography>
 
       <ApiConfigAlert />
-      <TextField
-        placeholder="Pesquisar modelos…"
-        value={filter}
-        onChange={(e) => setFilter(e.target.value)}
-        size="small"
-        fullWidth
-        sx={{ mb: 2, maxWidth: { xs: 'none', sm: 480 } }}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon fontSize="small" color="action" />
-            </InputAdornment>
-          ),
-        }}
-      />
+
+      <div className="relative mb-4 max-w-md">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="Pesquisar modelos…"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          className="pl-9"
+        />
+      </div>
 
       {isLoading ? <ListPageSkeleton /> : null}
       {isError ? (
-        <Alert severity="error">{(error as Error).message}</Alert>
+        <Alert variant="destructive">
+          <AlertDescription>{(error as Error).message}</AlertDescription>
+        </Alert>
       ) : null}
       {!isLoading && !isError && data && data.length === 0 ? (
-        <Typography>Nenhum modelo registado.</Typography>
+        <EmptyState title="Nenhum modelo registado." />
       ) : null}
       {!isLoading && !isError && data && data.length > 0 ? (
-        <Box>
-          <Stack
-            direction="row"
-            flexWrap="wrap"
-            alignItems="center"
-            gap={1}
-            sx={{ mb: 2 }}
-          >
-            <Typography variant="body2" color="text.secondary">
-              Ordenar por
-            </Typography>
+        <div>
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <span className="text-sm text-muted-foreground">Ordenar por</span>
             {(
               [
                 { key: 'title' as const, label: 'Título' },
                 { key: 'updated_at' as const, label: 'Atualização' },
               ] as const
             ).map(({ key, label }) => (
-              <Chip
+              <Button
                 key={key}
-                size="small"
-                label={`${label}${orderBy === key ? (order === 'asc' ? ' ↑' : ' ↓') : ''}`}
+                type="button"
+                variant={orderBy === key ? 'default' : 'outline'}
+                size="sm"
                 onClick={() => handleRequestSort(key)}
-                color={orderBy === key ? 'primary' : 'default'}
-                variant={orderBy === key ? 'filled' : 'outlined'}
-              />
+              >
+                {label}
+                {orderBy === key ? (order === 'asc' ? ' ↑' : ' ↓') : ''}
+              </Button>
             ))}
-          </Stack>
-          <Grid container spacing={2}>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {filteredSorted.map((t) => (
-              <Grid key={t.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-                <ListCard
-                  actions={
-                    <>
-                      <Tooltip title="Editar modelo">
-                        <IconButton
-                          component={Link}
-                          to={`/evaluation-forms/${t.id}/edit`}
-                          size="small"
-                          color="primary"
+              <ListCard
+                key={t.id}
+                actions={
+                  <>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-primary"
+                          asChild
                           aria-label="Editar modelo"
                         >
-                          <EditOutlinedIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Eliminar modelo">
-                        <IconButton
-                          size="small"
-                          color="error"
+                          <Link to={`/evaluation-forms/${t.id}/edit`}>
+                            <Pencil className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Editar modelo</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive"
                           aria-label="Eliminar modelo"
                           onClick={() => setDeleteId(t.id)}
                         >
-                          <DeleteOutlineIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </>
-                  }
-                >
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                    {t.title}
-                  </Typography>
-                  {t.description?.trim() ? (
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ mt: 1 }}
-                    >
-                      {t.description}
-                    </Typography>
-                  ) : null}
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    Atualizado {formatDate(t.updated_at)}
-                  </Typography>
-                </ListCard>
-              </Grid>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Eliminar modelo</TooltipContent>
+                    </Tooltip>
+                  </>
+                }
+              >
+                <h3 className="font-semibold text-foreground">{t.title}</h3>
+                {t.description?.trim() ? (
+                  <p className="mt-1 text-sm text-muted-foreground">{t.description}</p>
+                ) : null}
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Atualizado {formatDate(t.updated_at)}
+                </p>
+              </ListCard>
             ))}
-          </Grid>
-        </Box>
+          </div>
+        </div>
       ) : null}
 
       <ConfirmDeleteDialog
@@ -251,6 +219,6 @@ export function EvaluationFormsListPage() {
         onCancel={() => setDeleteId(null)}
         onConfirm={() => void confirmDelete()}
       />
-    </Box>
+    </div>
   )
 }

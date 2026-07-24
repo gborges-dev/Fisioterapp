@@ -1,4 +1,4 @@
-import { Box, Grid, Skeleton } from '@mui/material'
+import { Skeleton } from '@/components/ui/skeleton'
 
 export function ListPageSkeleton({
   count = 6,
@@ -8,14 +8,12 @@ export function ListPageSkeleton({
   cardHeight?: number
 }) {
   return (
-    <Box sx={{ minHeight: 400 }}>
-      <Grid container spacing={2}>
+    <div className="min-h-[400px]">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         {Array.from({ length: count }, (_, i) => (
-          <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-            <Skeleton variant="rectangular" height={cardHeight} sx={{ borderRadius: 2 }} />
-          </Grid>
+          <Skeleton key={i} style={{ height: cardHeight }} className="rounded-2xl" />
         ))}
-      </Grid>
-    </Box>
+      </div>
+    </div>
   )
 }

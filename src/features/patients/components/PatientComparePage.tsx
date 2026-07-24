@@ -1,19 +1,13 @@
-import {
-  Alert,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  CircularProgress,
-  Stack,
-  Typography,
-} from '@mui/material'
+import { ArrowLeft, Loader2 } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 
-import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
-import { RichTextContent } from '../../../components/RichTextContent'
-import { ApiConfigAlert } from '../../../components/ApiConfigAlert'
+import { GlassPanel, PageHeader } from '@/components/AppShell'
+import { RichTextContent } from '@/components/RichTextContent'
+import { ApiConfigAlert } from '@/components/ApiConfigAlert'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { usePatientEvaluationForms } from '../../evaluation-forms/hooks/usePatientEvaluationForms'
 import {
   parseAnswers,
@@ -45,13 +39,17 @@ export function PatientComparePage() {
   const loading = lp || le || lf
 
   if (!id) {
-    return <Alert severity="error">Paciente inválido.</Alert>
+    return (
+      <Alert variant="destructive">
+        <AlertDescription>Paciente inválido.</AlertDescription>
+      </Alert>
+    )
   }
 
   return (
-    <Box>
-      <PageBreadcrumbs
-        items={[
+    <div>
+      <PageHeader
+        breadcrumbs={[
           { label: 'Painel', to: '/' },
           { label: 'Pacientes', to: '/patients' },
           ...(patient
@@ -61,29 +59,47 @@ export function PatientComparePage() {
               ]
             : [{ label: 'Comparar' }]),
         ]}
+        title="Ficha vs evolução"
+        actions={
+          <Button variant="outline" asChild>
+            <Link to={`/patients/${id}`}>
+              <ArrowLeft className="h-4 w-4" />
+              Voltar ao paciente
+            </Link>
+          </Button>
+        }
       />
-      <Typography variant="h4" component="h2" gutterBottom>
-        Ficha vs evolução
-      </Typography>
-      <Button component={Link} to={`/patients/${id}`} sx={{ mb: 2 }}>
-        Voltar ao paciente
-      </Button>
+
       <ApiConfigAlert />
-      {loading ? <CircularProgress /> : null}
+
+      {loading ? (
+        <div className="flex justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      ) : null}
       {ep ? (
-        <Alert severity="error">{(errP as Error).message}</Alert>
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>{(errP as Error).message}</AlertDescription>
+        </Alert>
       ) : null}
       {ee ? (
-        <Alert severity="error">{(errE as Error).message}</Alert>
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>{(errE as Error).message}</AlertDescription>
+        </Alert>
       ) : null}
       {patient ? (
-        <Stack spacing={3}>
+        <div className="space-y-6">
           {!forms?.length ? (
-            <Alert severity="info">
-              Este paciente ainda não tem fichas de avaliação.{' '}
-              <Link to={`/patients/${id}/evaluation-forms/new`}>
-                Adicionar ficha
-              </Link>
+            <Alert>
+              <AlertDescription>
+                Este paciente ainda não tem fichas de avaliação.{' '}
+                <Link
+                  to={`/patients/${id}/evaluation-forms/new`}
+                  className="font-medium text-primary underline-offset-4 hover:underline"
+                >
+                  Adicionar ficha
+                </Link>
+              </AlertDescription>
             </Alert>
           ) : (
             forms.map((form) => {
@@ -95,92 +111,73 @@ export function PatientComparePage() {
                 ) ?? []
 
               return (
-                <Stack
+                <div
                   key={form.id}
-                  direction={{ xs: 'column', md: 'row' }}
-                  spacing={3}
-                  alignItems="stretch"
+                  className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-2"
                 >
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography variant="h6" gutterBottom>
-                      {form.title}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  <div className="min-w-0">
+                    <h2 className="display text-lg font-semibold">{form.title}</h2>
+                    <p className="mb-4 text-sm text-muted-foreground">
                       Avaliação em {formatDate(form.evaluation_date)}
-                    </Typography>
-                    <Card variant="outlined" sx={{ mb: 2 }}>
-                      <CardContent>
-                        {fields.length === 0 ? (
-                          <Typography color="text.secondary">
-                            Ficha sem campos preenchidos.
-                          </Typography>
-                        ) : (
-                          fields.map((field) => (
-                            <Box key={field.id} sx={{ mb: 1.5 }}>
-                              <Typography variant="subtitle2" color="text.secondary">
-                                {field.label}
-                              </Typography>
-                              <Typography sx={{ whiteSpace: 'pre-wrap' }}>
-                                {answers[field.label]?.trim() || '—'}
-                              </Typography>
-                            </Box>
-                          ))
-                        )}
-                      </CardContent>
-                    </Card>
-                  </Box>
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography variant="h6" gutterBottom>
+                    </p>
+                    <GlassPanel>
+                      {fields.length === 0 ? (
+                        <p className="text-muted-foreground">
+                          Ficha sem campos preenchidos.
+                        </p>
+                      ) : (
+                        fields.map((field) => (
+                          <div key={field.id} className="mb-3 last:mb-0">
+                            <p className="text-sm font-medium text-muted-foreground">
+                              {field.label}
+                            </p>
+                            <p className="whitespace-pre-wrap">
+                              {answers[field.label]?.trim() || '—'}
+                            </p>
+                          </div>
+                        ))
+                      )}
+                    </GlassPanel>
+                  </div>
+                  <div className="min-w-0">
+                    <h2 className="display mb-4 text-lg font-semibold">
                       Evolução vinculada
-                    </Typography>
+                    </h2>
                     {!linkedEvolution.length ? (
-                      <Typography color="text.secondary">
+                      <p className="text-muted-foreground">
                         Sem registos de evolução para esta ficha.
-                      </Typography>
+                      </p>
                     ) : (
-                      <Stack spacing={2}>
+                      <div className="space-y-4">
                         {linkedEvolution.map((row, index) => {
                           const isLatest = index === 0
                           return (
-                            <Card
+                            <GlassPanel
                               key={row.id}
-                              variant="outlined"
-                              sx={{
-                                borderColor: isLatest ? 'primary.main' : undefined,
-                              }}
+                              className={cn(isLatest && 'ring-2 ring-primary')}
                             >
-                              <CardContent>
-                                <Stack
-                                  direction="row"
-                                  spacing={1}
-                                  alignItems="center"
-                                  sx={{ mb: 1 }}
-                                >
-                                  <Typography variant="subtitle1">
-                                    {row.entry_date}
-                                  </Typography>
-                                  {isLatest ? (
-                                    <Chip
-                                      size="small"
-                                      color="primary"
-                                      label="Mais recente"
-                                    />
-                                  ) : null}
-                                </Stack>
-                                <RichTextContent content={row.content} variant="body2" />
-                              </CardContent>
-                            </Card>
+                              <div className="mb-2 flex flex-wrap items-center gap-2">
+                                <p className="font-semibold">{row.entry_date}</p>
+                                {isLatest ? (
+                                  <Badge>Mais recente</Badge>
+                                ) : null}
+                              </div>
+                              <RichTextContent
+                                content={row.content}
+                                variant="body2"
+                              />
+                            </GlassPanel>
                           )
                         })}
-                      </Stack>
+                      </div>
                     )}
-                  </Box>
-                </Stack>
+                  </div>
+                </div>
               )
             })
           )}
-        </Stack>
+        </div>
       ) : null}
-    </Box>
+    </div>
   )
 }

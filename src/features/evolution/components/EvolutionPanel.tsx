@@ -1,25 +1,22 @@
-import {
-  Alert,
-  Box,
-  Button,
-  FormControl,
-  Grid,
-  InputLabel,
-  MenuItem,
-  Select,
-  Stack,
-  TextField,
-  Typography,
-  type SelectChangeEvent,
-} from '@mui/material'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import { ConfirmDeleteDialog } from '../../../components/ConfirmDeleteDialog'
-import { ListPageSkeleton } from '../../../components/ListPageSkeleton'
-import { RichTextEditor } from '../../../components/RichTextEditor'
-import { ApiConfigAlert } from '../../../components/ApiConfigAlert'
-import { isRichTextEmpty } from '../../../lib/richText'
+import { ApiConfigAlert } from '@/components/ApiConfigAlert'
+import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog'
+import { ListPageSkeleton } from '@/components/ListPageSkeleton'
+import { RichTextEditor } from '@/components/RichTextEditor'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { isRichTextEmpty } from '@/lib/richText'
 import { usePatientEvaluationForms } from '../../evaluation-forms/hooks/usePatientEvaluationForms'
 import {
   useCreateEvolution,
@@ -140,111 +137,99 @@ export function EvolutionPanel({ patientId }: { patientId: string }) {
     isRichTextEmpty(content)
 
   return (
-    <Box>
-      <Typography variant="h6" component="h3" gutterBottom>
-        Evolução
-      </Typography>
+    <div>
+      <h3 className="mb-4 text-lg font-semibold text-foreground">Evolução</h3>
       <ApiConfigAlert />
 
       {loadingForms ? (
         <ListPageSkeleton count={1} cardHeight={48} />
       ) : null}
       {!loadingForms && evaluationForms && evaluationForms.length === 0 ? (
-        <Alert severity="warning" sx={{ mb: 2 }}>
-          É necessário adicionar uma ficha de avaliação antes de registar evolução.{' '}
-          <Link to={`/patients/${patientId}/evaluation-forms/new`}>
-            Adicionar ficha
-          </Link>
+        <Alert variant="warning" className="mb-4">
+          <AlertDescription>
+            É necessário adicionar uma ficha de avaliação antes de registar evolução.{' '}
+            <Link
+              to={`/patients/${patientId}/evaluation-forms/new`}
+              className="text-primary underline"
+            >
+              Adicionar ficha
+            </Link>
+          </AlertDescription>
         </Alert>
       ) : null}
 
-      <Grid container spacing={3} alignItems="flex-start">
-        <Grid size={{ xs: 12, md: 5 }}>
-          <Typography variant="subtitle1" component="h4" gutterBottom>
+      <div className="grid grid-cols-1 items-start gap-6 md:grid-cols-12">
+        <div className="md:col-span-5">
+          <h4 className="mb-3 text-base font-semibold text-foreground">
             {mode === 'edit' ? 'Editar registo' : 'Novo registo'}
-          </Typography>
-          <Box component="form" onSubmit={handleSubmit} noValidate>
-            <Stack spacing={2}>
-              <FormControl fullWidth required>
-                <InputLabel id="evaluation-form-label">Ficha de avaliação</InputLabel>
+          </h4>
+          <form onSubmit={handleSubmit} noValidate>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="evaluation-form-select">Ficha de avaliação</Label>
                 <Select
-                  labelId="evaluation-form-label"
-                  label="Ficha de avaliação"
-                  value={evaluationFormId}
-                  onChange={(e: SelectChangeEvent) =>
-                    setEvaluationFormId(e.target.value)
-                  }
+                  value={evaluationFormId || undefined}
+                  onValueChange={setEvaluationFormId}
                   disabled={!formsAvailable}
+                  required
                 >
-                  <MenuItem value="">
-                    <em>Selecionar ficha…</em>
-                  </MenuItem>
-                  {(evaluationForms ?? []).map((f) => (
-                    <MenuItem key={f.id} value={f.id}>
-                      {f.title} ({formatEvolutionDate(f.evaluation_date)})
-                    </MenuItem>
-                  ))}
+                  <SelectTrigger id="evaluation-form-select">
+                    <SelectValue placeholder="Selecionar ficha…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(evaluationForms ?? []).map((f) => (
+                      <SelectItem key={f.id} value={f.id}>
+                        {f.title} ({formatEvolutionDate(f.evaluation_date)})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
-              </FormControl>
-              <TextField
-                type="date"
-                label="Data"
-                slotProps={{ inputLabel: { shrink: true } }}
-                value={entryDate}
-                onChange={(e) => setEntryDate(e.target.value)}
-                fullWidth
-              />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="entry-date">Data</Label>
+                <Input
+                  id="entry-date"
+                  type="date"
+                  value={entryDate}
+                  onChange={(e) => setEntryDate(e.target.value)}
+                />
+              </div>
               <RichTextEditor
                 label="Registo de evolução"
                 value={content}
                 onChange={setContent}
               />
               {mutationError ? (
-                <Alert severity="error">{(mutationError as Error).message}</Alert>
+                <Alert variant="destructive">
+                  <AlertDescription>{(mutationError as Error).message}</AlertDescription>
+                </Alert>
               ) : null}
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  disabled={submitDisabled}
-                >
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button type="submit" disabled={submitDisabled}>
                   {mode === 'edit' ? 'Guardar alterações' : 'Adicionar registo'}
                 </Button>
                 {mode === 'edit' ? (
-                  <Button type="button" variant="outlined" onClick={resetForm}>
+                  <Button type="button" variant="outline" onClick={resetForm}>
                     Cancelar edição
                   </Button>
                 ) : null}
-              </Stack>
-            </Stack>
-          </Box>
-        </Grid>
+              </div>
+            </div>
+          </form>
+        </div>
 
-        <Grid size={{ xs: 12, md: 7 }}>
-          <Stack
-            direction="row"
-            alignItems="baseline"
-            justifyContent="space-between"
-            spacing={2}
-            sx={{ mb: 1.5 }}
-          >
-            <Typography variant="subtitle1" component="h4">
+        <div className="md:col-span-7">
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+            <h4 className="text-base font-semibold text-foreground">
               Histórico de evolução
-            </Typography>
+            </h4>
             {!isLoading && data ? (
-              <Typography variant="body2" color="text.secondary">
+              <span className="text-sm text-muted-foreground">
                 {data.length} registo{data.length !== 1 ? 's' : ''}
-              </Typography>
+              </span>
             ) : null}
-          </Stack>
-          <Box
-            sx={{
-              maxHeight: { md: 'calc(100vh - 280px)' },
-              overflowY: { md: 'auto' },
-              pr: { md: 0.5 },
-              pt: { md: 0.25 },
-            }}
-          >
+          </div>
+          <div className="md:max-h-[calc(100vh-280px)] md:overflow-y-auto md:pr-1 md:pt-0.5">
             <EvolutionEntriesAccordion
               entries={data}
               formTitleById={formTitleById}
@@ -258,9 +243,9 @@ export function EvolutionPanel({ patientId }: { patientId: string }) {
               onDelete={setEntryToDelete}
               deleteDisabled={removeEntry.isPending}
             />
-          </Box>
-        </Grid>
-      </Grid>
+          </div>
+        </div>
+      </div>
 
       <ConfirmDeleteDialog
         open={Boolean(entryToDelete)}
@@ -278,6 +263,6 @@ export function EvolutionPanel({ patientId }: { patientId: string }) {
         onCancel={() => setEntryToDelete(null)}
         onConfirm={() => void confirmDeleteEntry()}
       />
-    </Box>
+    </div>
   )
 }

@@ -1,40 +1,39 @@
-import AddIcon from '@mui/icons-material/Add'
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
-import SearchIcon from '@mui/icons-material/Search'
-import {
-  Alert,
-  Autocomplete,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  FormControl,
-  Grid,
-  IconButton,
-  InputAdornment,
-  InputLabel,
-  MenuItem,
-  Select,
-  Stack,
-  TextField,
-  Tooltip,
-  Typography,
-  type SelectChangeEvent,
-} from '@mui/material'
+import { Loader2, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 
-import { ConfirmDeleteDialog } from '../../../components/ConfirmDeleteDialog'
-import { ListCard } from '../../../components/ListCard'
-import { ListPageSkeleton } from '../../../components/ListPageSkeleton'
-import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
-import { ApiConfigAlert } from '../../../components/ApiConfigAlert'
-import { usePatients } from '../../patients/hooks/usePatients'
-import type { PatientRow } from '../../patients/services/patientsApi'
+import { EmptyState, GlassPanel, PageHeader } from '@/components/AppShell'
+import { ApiConfigAlert } from '@/components/ApiConfigAlert'
+import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog'
+import { FilterableSelect } from '@/components/FilterableSelect'
+import { ListCard } from '@/components/ListCard'
+import { ListPageSkeleton } from '@/components/ListPageSkeleton'
+import { usePatients } from '@/features/patients/hooks/usePatients'
+import type { PatientRow } from '@/features/patients/services/patientsApi'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import { cn } from '@/lib/utils'
 import {
   useFinanceEntries,
   useFinanceMutations,
@@ -107,6 +106,11 @@ export function FinancePage() {
     type: typeFilter || null,
   })
   const { create, update, remove } = useFinanceMutations()
+
+  const patientOptions = useMemo(
+    () => (patients ?? []).map((p) => ({ value: p, label: p.full_name })),
+    [patients],
+  )
 
   const getHaystack = useCallback(
     (row: FinanceEntryWithPatient) =>
@@ -213,283 +217,256 @@ export function FinancePage() {
   const saving = create.isPending || update.isPending
 
   return (
-    <Box>
-      <PageBreadcrumbs
-        items={[
+    <div>
+      <PageHeader
+        breadcrumbs={[
           { label: 'Painel', to: '/' },
           { label: 'Financeiro' },
         ]}
+        title="Financeiro"
+        actions={
+          <Button onClick={openCreate}>
+            <Plus />
+            Novo lançamento
+          </Button>
+        }
       />
-      <Box
-        sx={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 2,
-          mb: 2,
-        }}
-      >
-        <Typography variant="h4" component="h2">
-          Financeiro
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={openCreate}
-        >
-          Novo lançamento
-        </Button>
-      </Box>
 
       <ApiConfigAlert />
 
-      <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid size={{ xs: 12, sm: 6 }}>
-          <Card variant="outlined">
-            <CardContent>
-              <Typography variant="body2" color="text.secondary">
-                Total de entradas
-              </Typography>
-              <Typography variant="h5" sx={{ color: 'success.main', mt: 0.5 }}>
-                {formatMoney(totals.entradas)}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6 }}>
-          <Card variant="outlined">
-            <CardContent>
-              <Typography variant="body2" color="text.secondary">
-                Total de saídas
-              </Typography>
-              <Typography variant="h5" sx={{ color: 'error.main', mt: 0.5 }}>
-                {formatMoney(totals.saidas)}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <GlassPanel className="py-4">
+          <p className="text-sm text-muted-foreground">Total de entradas</p>
+          <p className="display mt-1 text-2xl font-semibold text-chart-2">
+            {formatMoney(totals.entradas)}
+          </p>
+        </GlassPanel>
+        <GlassPanel className="py-4">
+          <p className="text-sm text-muted-foreground">Total de saídas</p>
+          <p className="display mt-1 text-2xl font-semibold text-destructive">
+            {formatMoney(totals.saidas)}
+          </p>
+        </GlassPanel>
+      </div>
 
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        spacing={2}
-        sx={{ mb: 2 }}
-        useFlexGap
-        flexWrap="wrap"
-      >
-        <TextField
-          placeholder="Pesquisar descrição, paciente…"
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          size="small"
-          sx={{ flex: 1, minWidth: { xs: '100%', sm: 240 } }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon fontSize="small" color="action" />
-              </InputAdornment>
-            ),
-          }}
-        />
-        <TextField
-          type="date"
-          label="De"
-          size="small"
-          value={from}
-          onChange={(e) => setFrom(e.target.value)}
-          slotProps={{ inputLabel: { shrink: true } }}
-        />
-        <TextField
-          type="date"
-          label="Até"
-          size="small"
-          value={to}
-          onChange={(e) => setTo(e.target.value)}
-          slotProps={{ inputLabel: { shrink: true } }}
-        />
-        <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 160 } }}>
-          <InputLabel id="finance-type-filter-label">Tipo</InputLabel>
+      <div className="mb-4 flex flex-col flex-wrap gap-3 md:flex-row">
+        <div className="relative min-w-0 flex-1 md:min-w-[240px]">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Pesquisar descrição, paciente…"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="finance-from">De</Label>
+          <Input
+            id="finance-from"
+            type="date"
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+            className="w-full sm:w-auto"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="finance-to">Até</Label>
+          <Input
+            id="finance-to"
+            type="date"
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
+            className="w-full sm:w-auto"
+          />
+        </div>
+        <div className="w-full space-y-1.5 sm:w-40">
+          <Label htmlFor="finance-type-filter">Tipo</Label>
           <Select
-            labelId="finance-type-filter-label"
-            label="Tipo"
-            value={typeFilter}
-            onChange={(e: SelectChangeEvent) =>
-              setTypeFilter(e.target.value as FinanceEntryType | '')
+            value={typeFilter || 'all'}
+            onValueChange={(value) =>
+              setTypeFilter(value === 'all' ? '' : (value as FinanceEntryType))
             }
           >
-            <MenuItem value="">Todos</MenuItem>
-            <MenuItem value="entrada">Entradas</MenuItem>
-            <MenuItem value="saida">Saídas</MenuItem>
+            <SelectTrigger id="finance-type-filter">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="entrada">Entradas</SelectItem>
+              <SelectItem value="saida">Saídas</SelectItem>
+            </SelectContent>
           </Select>
-        </FormControl>
-        <Autocomplete
-          size="small"
-          sx={{ minWidth: { xs: '100%', sm: 260 } }}
-          options={patients ?? []}
+        </div>
+        <FilterableSelect
+          className="w-full sm:w-64"
+          label="Paciente"
+          placeholder="Todos"
+          emptyLabel="Todos"
+          options={patientOptions}
           value={patient}
-          onChange={(_, value) => setPatient(value)}
-          getOptionLabel={(o) => o.full_name}
-          isOptionEqualToValue={(a, b) => a.id === b.id}
-          renderInput={(params) => (
-            <TextField {...params} label="Paciente" placeholder="Todos" />
-          )}
+          onChange={setPatient}
+          getOptionKey={(p) => p.id}
         />
-      </Stack>
+      </div>
 
       {isLoading ? <ListPageSkeleton /> : null}
       {isError ? (
-        <Alert severity="error">{(error as Error).message}</Alert>
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>{(error as Error).message}</AlertDescription>
+        </Alert>
       ) : null}
       {!isLoading && !isError && filtered.length === 0 ? (
-        <Typography color="text.secondary">
-          Nenhum lançamento no período filtrado.
-        </Typography>
+        <EmptyState title="Nenhum lançamento no período filtrado." />
       ) : null}
 
       {!isLoading && !isError && filtered.length > 0 ? (
-        <Grid container spacing={2}>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {filtered.map((row) => (
-            <Grid key={row.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-              <ListCard
-                actions={
-                  <>
-                    <Tooltip title="Editar">
-                      <IconButton
-                        size="small"
-                        color="primary"
+            <ListCard
+              key={row.id}
+              actions={
+                <>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-primary"
                         aria-label="Editar lançamento"
                         onClick={() => openEdit(row)}
                       >
-                        <EditOutlinedIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Eliminar">
-                      <IconButton
-                        size="small"
-                        color="error"
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Editar</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
                         aria-label="Eliminar lançamento"
                         onClick={() => setDeleteTarget(row)}
                         disabled={remove.isPending}
                       >
-                        <DeleteOutlineIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </>
-                }
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Eliminar</TooltipContent>
+                  </Tooltip>
+                </>
+              }
+            >
+              <p
+                className={cn(
+                  'text-xs font-semibold uppercase tracking-wide',
+                  row.type === 'entrada' ? 'text-chart-2' : 'text-destructive',
+                )}
               >
-                <Typography
-                  variant="overline"
-                  sx={{
-                    color: row.type === 'entrada' ? 'success.main' : 'error.main',
-                  }}
-                >
-                  {row.type === 'entrada' ? 'Entrada' : 'Saída'}
-                </Typography>
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  {formatMoney(row.amount)}
-                </Typography>
-                <Typography variant="body2" sx={{ mt: 0.5 }}>
-                  {row.description.trim() || '—'}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  {formatDate(row.entry_date)}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {row.patients?.full_name ?? 'Sem paciente'}
-                </Typography>
-              </ListCard>
-            </Grid>
+                {row.type === 'entrada' ? 'Entrada' : 'Saída'}
+              </p>
+              <p className="display text-xl font-semibold">{formatMoney(row.amount)}</p>
+              <p className="mt-1 text-sm">{row.description.trim() || '—'}</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {formatDate(row.entry_date)}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {row.patients?.full_name ?? 'Sem paciente'}
+              </p>
+            </ListCard>
           ))}
-        </Grid>
+        </div>
       ) : null}
 
-      <Dialog
-        open={dialogOpen}
-        onClose={closeDialog}
-        fullWidth
-        maxWidth="sm"
-      >
-        <Box component="form" onSubmit={handleSubmit}>
-          <DialogTitle>
-            {editing ? 'Editar lançamento' : 'Novo lançamento'}
-          </DialogTitle>
-          <DialogContent>
-            <Stack spacing={2} sx={{ mt: 1 }}>
-              <FormControl fullWidth required>
-                <InputLabel id="finance-type-label">Tipo</InputLabel>
+      <Dialog open={dialogOpen} onOpenChange={(v) => !v && closeDialog()}>
+        <DialogContent>
+          <form onSubmit={handleSubmit}>
+            <DialogHeader>
+              <DialogTitle>
+                {editing ? 'Editar lançamento' : 'Novo lançamento'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="finance-dialog-type">Tipo</Label>
                 <Select
-                  labelId="finance-type-label"
-                  label="Tipo"
                   value={form.type}
-                  onChange={(e: SelectChangeEvent) =>
+                  onValueChange={(value) =>
                     setForm((f) => ({
                       ...f,
-                      type: e.target.value as FinanceEntryType,
+                      type: value as FinanceEntryType,
                     }))
                   }
                 >
-                  <MenuItem value="entrada">Entrada</MenuItem>
-                  <MenuItem value="saida">Saída</MenuItem>
+                  <SelectTrigger id="finance-dialog-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="entrada">Entrada</SelectItem>
+                    <SelectItem value="saida">Saída</SelectItem>
+                  </SelectContent>
                 </Select>
-              </FormControl>
-              <TextField
-                label="Valor"
-                required
-                value={amountText}
-                onChange={(e) => setAmountText(e.target.value)}
-                inputMode="decimal"
-                fullWidth
-              />
-              <TextField
-                type="date"
-                label="Data"
-                required
-                value={form.entryDate}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, entryDate: e.target.value }))
-                }
-                slotProps={{ inputLabel: { shrink: true } }}
-                fullWidth
-              />
-              <TextField
-                label="Descrição"
-                required
-                value={form.description}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, description: e.target.value }))
-                }
-                fullWidth
-                multiline
-                minRows={2}
-              />
-              <Autocomplete
-                options={patients ?? []}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="finance-amount">Valor</Label>
+                <Input
+                  id="finance-amount"
+                  required
+                  value={amountText}
+                  onChange={(e) => setAmountText(e.target.value)}
+                  inputMode="decimal"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="finance-entry-date">Data</Label>
+                <Input
+                  id="finance-entry-date"
+                  type="date"
+                  required
+                  value={form.entryDate}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, entryDate: e.target.value }))
+                  }
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="finance-description">Descrição</Label>
+                <Textarea
+                  id="finance-description"
+                  required
+                  value={form.description}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, description: e.target.value }))
+                  }
+                  rows={2}
+                />
+              </div>
+              <FilterableSelect
+                label="Paciente (opcional)"
+                placeholder="Sem paciente"
+                emptyLabel="Sem paciente"
+                options={patientOptions}
                 value={selectedPatient}
-                onChange={(_, value) =>
-                  setForm((f) => ({ ...f, patientId: value?.id ?? null }))
+                onChange={(p) =>
+                  setForm((f) => ({ ...f, patientId: p?.id ?? null }))
                 }
-                getOptionLabel={(o) => o.full_name}
-                isOptionEqualToValue={(a, b) => a.id === b.id}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Paciente (opcional)"
-                    placeholder="Sem paciente"
-                  />
-                )}
+                getOptionKey={(p) => p.id}
               />
-            </Stack>
-          </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 2 }}>
-            <Button onClick={closeDialog} disabled={saving}>
-              Cancelar
-            </Button>
-            <Button type="submit" variant="contained" disabled={saving}>
-              {editing ? 'Guardar' : 'Criar'}
-            </Button>
-          </DialogActions>
-        </Box>
+            </div>
+            <DialogFooter className="mt-4">
+              <Button type="button" variant="outline" onClick={closeDialog} disabled={saving}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={saving}>
+                {saving ? <Loader2 className="animate-spin" /> : null}
+                {editing ? 'Guardar' : 'Criar'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
       </Dialog>
 
       <ConfirmDeleteDialog
@@ -516,6 +493,6 @@ export function FinancePage() {
         onCancel={() => setDeleteTarget(null)}
         onConfirm={() => void confirmDelete()}
       />
-    </Box>
+    </div>
   )
 }

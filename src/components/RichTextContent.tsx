@@ -1,7 +1,7 @@
 import DOMPurify from 'dompurify'
-import { Box, Typography } from '@mui/material'
 
-import { looksLikeHtml } from '../lib/richText'
+import { cn } from '@/lib/utils'
+import { looksLikeHtml } from '@/lib/richText'
 
 const ALLOWED_TAGS = [
   'p',
@@ -25,12 +25,13 @@ export function RichTextContent({
   content: string
   variant?: 'body1' | 'body2'
 }) {
+  const textClass = cn(
+    variant === 'body2' ? 'text-sm' : 'text-base',
+    'text-foreground',
+  )
+
   if (!content?.trim()) {
-    return (
-      <Typography variant={variant} color="text.secondary">
-        —
-      </Typography>
-    )
+    return <p className={cn(textClass, 'text-muted-foreground')}>—</p>
   }
 
   if (looksLikeHtml(content)) {
@@ -39,23 +40,18 @@ export function RichTextContent({
       ALLOWED_ATTR: ['href', 'target', 'rel'],
     })
     return (
-      <Box
-        component="div"
-        sx={{
-          typography: variant,
-          '& p': { margin: 0, marginBottom: 0.5 },
-          '& p:last-child': { marginBottom: 0 },
-          '& ul, & ol': { margin: 0, pl: 2.5, mb: 0.5 },
-          '& a': { color: 'primary.main' },
-        }}
+      <div
+        className={cn(
+          textClass,
+          '[&_p]:mb-1 [&_p:last-child]:mb-0',
+          '[&_ul]:mb-1 [&_ul]:ml-5 [&_ul]:list-disc',
+          '[&_ol]:mb-1 [&_ol]:ml-5 [&_ol]:list-decimal',
+          '[&_a]:text-primary [&_a]:underline',
+        )}
         dangerouslySetInnerHTML={{ __html: safe }}
       />
     )
   }
 
-  return (
-    <Typography variant={variant} sx={{ whiteSpace: 'pre-wrap' }}>
-      {content}
-    </Typography>
-  )
+  return <p className={cn(textClass, 'whitespace-pre-wrap')}>{content}</p>
 }

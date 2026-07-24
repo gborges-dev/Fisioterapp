@@ -1,20 +1,11 @@
-import AutoAwesomeOutlinedIcon from '@mui/icons-material/AutoAwesomeOutlined'
-import {
-  Alert,
-  Box,
-  Card,
-  CardContent,
-  CircularProgress,
-  Grid,
-  Stack,
-  Typography,
-} from '@mui/material'
-import { LineChart } from '@mui/x-charts/LineChart'
-import { useTheme } from '@mui/material/styles'
+import { Loader2, Sparkles } from 'lucide-react'
 
-import { ListPageSkeleton } from '../../../components/ListPageSkeleton'
-import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
-import { ApiConfigAlert } from '../../../components/ApiConfigAlert'
+import { GlassPanel, PageHeader } from '@/components/AppShell'
+import { ApiConfigAlert } from '@/components/ApiConfigAlert'
+import { GlassAreaChart } from '@/components/charts/GlassAreaChart'
+import { ListPageSkeleton } from '@/components/ListPageSkeleton'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { getChartColor } from '@/lib/chartColors'
 import {
   dashboardChartDays,
   useDashboardEvolutionDaily,
@@ -32,7 +23,6 @@ function shortDate(ymd: string) {
 }
 
 export function DashboardPage() {
-  const theme = useTheme()
   const { data, isLoading, isError, error } = useDashboardSummary()
   const evoDaily = useDashboardEvolutionDaily()
   const subDaily = useDashboardSubmissionsDaily()
@@ -47,194 +37,117 @@ export function DashboardPage() {
       ? buildDashboardInsights(data, evoPoints, subPoints)
       : []
 
-  const chartPrimary = theme.palette.primary.main
+  const chartPrimary = getChartColor(1)
+  const chartSecondary = getChartColor(2)
 
   return (
-    <Box>
-      <PageBreadcrumbs items={[{ label: 'Painel' }]} />
-      <Typography variant="h4" component="h2" gutterBottom>
-        Painel
-      </Typography>
+    <div>
+      <PageHeader breadcrumbs={[{ label: 'Painel' }]} title="Painel" />
       <ApiConfigAlert />
-      {isLoading ? (
-        <ListPageSkeleton count={4} cardHeight={88} />
-      ) : null}
+      {isLoading ? <ListPageSkeleton count={4} cardHeight={88} /> : null}
       {isError ? (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {(error as Error).message}
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>{(error as Error).message}</AlertDescription>
         </Alert>
       ) : null}
       {data ? (
-        <Grid container spacing={2}>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Card variant="outlined">
-              <CardContent>
-                <Typography color="text.secondary">Pacientes</Typography>
-                <Typography variant="h5">{data.patientCount}</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Card variant="outlined">
-              <CardContent>
-                <Typography color="text.secondary">
-                  Evoluções (7 dias)
-                </Typography>
-                <Typography variant="h5">{data.evolutionLast7Days}</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Card variant="outlined">
-              <CardContent>
-                <Typography color="text.secondary">
-                  Respostas a formulários (7 dias)
-                </Typography>
-                <Typography variant="h5">
-                  {data.submissionsLast7Days}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Card variant="outlined">
-              <CardContent>
-                <Typography color="text.secondary">Formulários</Typography>
-                <Typography variant="h5">{data.formTemplateCount}</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-12">
+          <GlassPanel className="sm:col-span-1 md:col-span-1 lg:col-span-3">
+            <p className="text-sm text-muted-foreground">Pacientes</p>
+            <p className="mt-1 text-3xl font-semibold tabular-nums">{data.patientCount}</p>
+          </GlassPanel>
+          <GlassPanel className="sm:col-span-1 md:col-span-1 lg:col-span-3">
+            <p className="text-sm text-muted-foreground">Evoluções (7 dias)</p>
+            <p className="mt-1 text-3xl font-semibold tabular-nums">
+              {data.evolutionLast7Days}
+            </p>
+          </GlassPanel>
+          <GlassPanel className="sm:col-span-1 md:col-span-1 lg:col-span-3">
+            <p className="text-sm text-muted-foreground">
+              Respostas a formulários (7 dias)
+            </p>
+            <p className="mt-1 text-3xl font-semibold tabular-nums">
+              {data.submissionsLast7Days}
+            </p>
+          </GlassPanel>
+          <GlassPanel className="sm:col-span-1 md:col-span-1 lg:col-span-3">
+            <p className="text-sm text-muted-foreground">Formulários</p>
+            <p className="mt-1 text-3xl font-semibold tabular-nums">
+              {data.formTemplateCount}
+            </p>
+          </GlassPanel>
 
-          <Grid size={{ xs: 12, lg: 6 }}>
-            <Card variant="outlined" sx={{ height: '100%' }}>
-              <CardContent>
-                <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                  Evoluções por dia (últimos {dashboardChartDays} dias)
-                </Typography>
-                {evoDaily.isLoading ? (
-                  <CircularProgress size={28} />
-                ) : evoDaily.isError ? (
-                  <Alert severity="error">
-                    {(evoDaily.error as Error).message}
-                  </Alert>
-                ) : (
-                  <Box sx={{ width: '100%', overflowX: 'auto' }}>
-                    <LineChart
-                      height={280}
-                      sx={{ minWidth: { xs: 320, sm: '100%' } }}
-                      margin={{ left: 40, right: 12, top: 8, bottom: 28 }}
-                    xAxis={[
-                      {
-                        scaleType: 'point',
-                        data: xEvo,
-                        tickLabelStyle: { fontSize: 11 },
-                      },
-                    ]}
-                    series={[
-                      {
-                        data: evoPoints.map((p) => p.count),
-                        label: 'Registos',
-                        color: chartPrimary,
-                        area: true,
-                        showMark: true,
-                      },
-                    ]}
-                    grid={{ vertical: true, horizontal: true }}
-                    hideLegend
-                  />
-                  </Box>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
+          <GlassPanel className="h-full lg:col-span-6">
+            <h3 className="mb-4 text-base font-semibold">
+              Evoluções por dia (últimos {dashboardChartDays} dias)
+            </h3>
+            {evoDaily.isLoading ? (
+              <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
+            ) : evoDaily.isError ? (
+              <Alert variant="destructive">
+                <AlertDescription>{(evoDaily.error as Error).message}</AlertDescription>
+              </Alert>
+            ) : (
+              <div className="w-full overflow-x-auto">
+                <GlassAreaChart
+                  labels={xEvo}
+                  values={evoPoints.map((p) => p.count)}
+                  color={chartPrimary}
+                  valueLabel="Registos"
+                />
+              </div>
+            )}
+          </GlassPanel>
 
-          <Grid size={{ xs: 12, lg: 6 }}>
-            <Card variant="outlined" sx={{ height: '100%' }}>
-              <CardContent>
-                <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                  Respostas a formulários por dia (últimos {dashboardChartDays}{' '}
-                  dias)
-                </Typography>
-                {subDaily.isLoading ? (
-                  <CircularProgress size={28} />
-                ) : subDaily.isError ? (
-                  <Alert severity="error">
-                    {(subDaily.error as Error).message}
-                  </Alert>
-                ) : (
-                  <Box sx={{ width: '100%', overflowX: 'auto' }}>
-                    <LineChart
-                      height={280}
-                      sx={{ minWidth: { xs: 320, sm: '100%' } }}
-                      margin={{ left: 40, right: 12, top: 8, bottom: 28 }}
-                    xAxis={[
-                      {
-                        scaleType: 'point',
-                        data: xSub,
-                        tickLabelStyle: { fontSize: 11 },
-                      },
-                    ]}
-                    series={[
-                      {
-                        data: subPoints.map((p) => p.count),
-                        label: 'Respostas',
-                        color: theme.palette.secondary.main,
-                        area: true,
-                        showMark: true,
-                      },
-                    ]}
-                    grid={{ vertical: true, horizontal: true }}
-                    hideLegend
-                  />
-                  </Box>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
+          <GlassPanel className="h-full lg:col-span-6">
+            <h3 className="mb-4 text-base font-semibold">
+              Respostas a formulários por dia (últimos {dashboardChartDays} dias)
+            </h3>
+            {subDaily.isLoading ? (
+              <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
+            ) : subDaily.isError ? (
+              <Alert variant="destructive">
+                <AlertDescription>{(subDaily.error as Error).message}</AlertDescription>
+              </Alert>
+            ) : (
+              <div className="w-full overflow-x-auto">
+                <GlassAreaChart
+                  labels={xSub}
+                  values={subPoints.map((p) => p.count)}
+                  color={chartSecondary}
+                  valueLabel="Respostas"
+                />
+              </div>
+            )}
+          </GlassPanel>
 
-          <Grid size={{ xs: 12 }}>
-            <Card variant="outlined">
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                  <AutoAwesomeOutlinedIcon color="primary" fontSize="small" />
-                  <Typography variant="subtitle1" fontWeight={600}>
-                    Insights automáticos
-                  </Typography>
-                </Box>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-                  Sugestões com base nos números atuais do painel.
-                </Typography>
-                {insights.length === 0 ? (
-                  <Typography color="text.secondary" variant="body2">
-                    A carregar…
-                  </Typography>
-                ) : (
-                  <Stack spacing={1.25}>
-                    {insights.map((line, i) => (
-                      <Card key={i} variant="outlined" sx={{ borderRadius: 2, bgcolor: 'action.hover' }}>
-                        <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
-                          <Box sx={{ display: 'flex', gap: 1.25, alignItems: 'flex-start' }}>
-                            <Typography
-                              component="span"
-                              variant="caption"
-                              color="primary"
-                              fontWeight={700}
-                              sx={{ mt: 0.15, flexShrink: 0 }}
-                            >
-                              {i + 1}.
-                            </Typography>
-                            <Typography variant="body2">{line}</Typography>
-                          </Box>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </Stack>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
+          <GlassPanel className="lg:col-span-12">
+            <div className="mb-1 flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" aria-hidden />
+              <h3 className="text-base font-semibold">Insights automáticos</h3>
+            </div>
+            <p className="mb-4 text-sm text-muted-foreground">
+              Sugestões com base nos números atuais do painel.
+            </p>
+            {insights.length === 0 ? (
+              <p className="text-sm text-muted-foreground">A carregar…</p>
+            ) : (
+              <div className="space-y-3">
+                {insights.map((line, i) => (
+                  <div key={i} className="glass-subtle rounded-xl p-4">
+                    <div className="flex items-start gap-3">
+                      <span className="mt-0.5 shrink-0 text-xs font-bold text-primary">
+                        {i + 1}.
+                      </span>
+                      <p className="text-sm">{line}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </GlassPanel>
+        </div>
       ) : null}
-    </Box>
+    </div>
   )
 }
