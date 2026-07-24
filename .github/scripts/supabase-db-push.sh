@@ -8,7 +8,7 @@ DB_PASSWORD="${SUPABASE_DB_PASSWORD:-}"
 
 if [ -z "$DB_URL" ]; then
   if [ -n "$PROJECT_REF" ] && [ -n "$DB_PASSWORD" ]; then
-    ENCODED_PW="$(python3 -c "import urllib.parse, os; print(urllib.parse.quote(os.environ['DB_PASSWORD'], safe=''))")"
+    ENCODED_PW="$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1], safe=''))" "$DB_PASSWORD")"
     DB_URL="postgresql://postgres:${ENCODED_PW}@db.${PROJECT_REF}.supabase.co:5432/postgres"
   else
     echo "::error::Configure SUPABASE_*_DATABASE_URL ou SUPABASE_*_PROJECT_REF + SUPABASE_*_DB_PASSWORD nos secrets do GitHub (environment production/development)."
