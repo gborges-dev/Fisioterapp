@@ -130,10 +130,12 @@ Repositório: `gborges-dev/Fisioterapp` → **Settings → Secrets and variables
 | Secret | Descrição |
 |--------|-----------|
 | `SUPABASE_ACCESS_TOKEN` | [Account → Access Tokens](https://supabase.com/dashboard/account/tokens) |
-| `SUPABASE_DEV_PROJECT_REF` | Reference ID do projeto DEV |
-| `SUPABASE_DEV_DB_PASSWORD` | Senha do Postgres DEV |
-| `SUPABASE_PROD_PROJECT_REF` | Reference ID do projeto PROD |
-| `SUPABASE_PROD_DB_PASSWORD` | Senha do Postgres PROD |
+| `SUPABASE_DEV_DATABASE_URL` | Connection string completa do Postgres DEV (senha URL-encoded) |
+| `SUPABASE_PROD_DATABASE_URL` | Connection string completa do Postgres PROD (senha URL-encoded) |
+| `SUPABASE_DEV_PROJECT_REF` | *(opcional)* Reference ID do projeto DEV |
+| `SUPABASE_PROD_PROJECT_REF` | *(opcional)* Reference ID do projeto PROD |
+| `SUPABASE_DEV_DB_PASSWORD` | *(legado)* Senha do Postgres DEV — prefira `SUPABASE_*_DATABASE_URL` |
+| `SUPABASE_PROD_DB_PASSWORD` | *(legado)* Senha do Postgres PROD — prefira `SUPABASE_*_DATABASE_URL` |
 
 ### Variables (Repository variables)
 
@@ -239,7 +241,8 @@ npx supabase db diff
 |----------|---------|
 | "API não configurada" no front | Definir `VITE_API_URL` e reiniciar `npm run dev` |
 | CI build falha | Configurar `vars.VITE_API_URL_DEV` no GitHub |
-| `supabase db push` falha no CI | Verificar `SUPABASE_DEV_PROJECT_REF`, password e se migrations já foram aplicadas manualmente com conflito |
+| `supabase db push` falha no CI com `cli_login_postgres` / `permission denied` | Use secret `SUPABASE_PROD_DATABASE_URL` (URI completa). Senha com `@` → `%40`. Confira em Settings → Database → Connection string. |
+| `supabase db push` falha no CI (geral) | Verificar `SUPABASE_*_DATABASE_URL` e `SUPABASE_ACCESS_TOKEN` |
 | Login 401 | API DEV com seed diferente; rodar `seed:users` na API |
 | CORS | Configurar origem do front DEV na API Nest |
 
