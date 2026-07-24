@@ -25,10 +25,12 @@ jobs:
           version: latest
 
       - name: Aplicar migrations
-        run: supabase db push --db-url "$SUPABASE_DB_URL"
+        run: bash .github/scripts/supabase-db-push.sh
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DEV_DATABASE_URL }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_DEV_PROJECT_REF }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DEV_DB_PASSWORD }}
 
   build-front:
     name: Build front DEV
