@@ -131,11 +131,13 @@ Repositório: `gborges-dev/Fisioterapp` → **Settings → Secrets and variables
 |--------|-----------|
 | `SUPABASE_ACCESS_TOKEN` | [Account → Access Tokens](https://supabase.com/dashboard/account/tokens) |
 | `SUPABASE_DEV_DATABASE_URL` | Connection string completa do Postgres DEV (senha URL-encoded) |
-| `SUPABASE_PROD_DATABASE_URL` | Connection string completa do Postgres PROD (senha URL-encoded) |
+| `SUPABASE_PROD_DATABASE_URL` | Connection string **pooler IPv4** do Postgres PROD (Session pooler, senha URL-encoded). **Nao** use `db.<ref>.supabase.co` no CI. |
 | `SUPABASE_DEV_PROJECT_REF` | *(opcional)* Reference ID do projeto DEV |
-| `SUPABASE_PROD_PROJECT_REF` | *(opcional)* Reference ID do projeto PROD |
-| `SUPABASE_DEV_DB_PASSWORD` | *(legado)* Senha do Postgres DEV — prefira `SUPABASE_*_DATABASE_URL` |
-| `SUPABASE_PROD_DB_PASSWORD` | *(legado)* Senha do Postgres PROD — prefira `SUPABASE_*_DATABASE_URL` |
+| `SUPABASE_PROD_PROJECT_REF` | *(opcional)* Reference ID do projeto PROD — com `SUPABASE_*_DB_PASSWORD` o CI monta URL do pooler |
+| `SUPABASE_DEV_DB_PASSWORD` | Senha Postgres DEV (com `SUPABASE_DEV_PROJECT_REF`) |
+| `SUPABASE_PROD_DB_PASSWORD` | Senha Postgres PROD (com `SUPABASE_PROD_PROJECT_REF`) |
+| `SUPABASE_DEV_POOLER_HOST` | *(opcional)* Ex.: `aws-1-us-east-2.pooler.supabase.com` (default no script) |
+| `SUPABASE_PROD_POOLER_HOST` | *(opcional)* Host do Session pooler PROD (Dashboard → Connect) |
 
 ### Variables (Repository variables)
 
@@ -241,8 +243,8 @@ npx supabase db diff
 |----------|---------|
 | "API não configurada" no front | Definir `VITE_API_URL` e reiniciar `npm run dev` |
 | CI build falha | Configurar `vars.VITE_API_URL_DEV` no GitHub |
-| `supabase db push` falha no CI com `cli_login_postgres` / `permission denied` | Use secret `SUPABASE_PROD_DATABASE_URL` (URI completa). Senha com `@` → `%40`. Confira em Settings → Database → Connection string. |
-| `supabase db push` falha no CI (geral) | Verificar `SUPABASE_*_DATABASE_URL` e `SUPABASE_ACCESS_TOKEN` |
+| `supabase db push` falha no CI com `network is unreachable` / IPv6 | GitHub Actions nao tem IPv6. Use **Session pooler** (nao `db.*.supabase.co`). Com ref+password o script ja usa pooler; ou defina `SUPABASE_*_DATABASE_URL` com URI do pooler. |
+| `supabase db push` falha no CI com `cli_login_postgres` / `permission denied` | Use secret `SUPABASE_PROD_DATABASE_URL` (URI pooler). Senha com `@` → `%40` ou use ref + password separados. |
 | Login 401 | API DEV com seed diferente; rodar `seed:users` na API |
 | CORS | Configurar origem do front DEV na API Nest |
 
