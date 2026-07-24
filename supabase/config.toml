@@ -1,0 +1,8 @@
+# Config mínima para Supabase CLI (migrations via CI e local).
+# O project_id real vem do `supabase link` ou da variável SUPABASE_PROJECT_REF no CI.
+
+[db]
+major_version = 15
+
+[db.migrations]
+enabled = true

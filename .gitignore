@@ -26,3 +26,6 @@ dist-ssr
 *.sw?
 
 .worktrees/
+
+# Supabase CLI (link local ao projeto remoto)
+supabase/.temp/
