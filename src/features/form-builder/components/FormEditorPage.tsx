@@ -1,26 +1,23 @@
-import AddIcon from '@mui/icons-material/Add'
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material'
+import { Loader2, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
-import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
-import { ApiConfigAlert } from '../../../components/ApiConfigAlert'
-import { useToast } from '../../../components/toast'
-import { isOptionFieldType, validateOptionFields } from '../../../lib/formFieldValidation'
-import type { FormFieldSchema, Json } from '../../../types/database.types'
+import { GlassPanel, PageHeader } from '@/components/AppShell'
+import { ApiConfigAlert } from '@/components/ApiConfigAlert'
+import { useToast } from '@/components/toast'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { isOptionFieldType, validateOptionFields } from '@/lib/formFieldValidation'
+import type { FormFieldSchema, Json } from '@/types/database.types'
 import { useFormTemplate, useFormTemplateMutations } from '../hooks/useFormTemplates'
 import { parseFormSchema } from '../services/formsApi'
 
@@ -47,17 +44,29 @@ export function FormEditorPage() {
   )
 
   if (!isNew && isLoading) {
-    return <CircularProgress aria-label="A carregar formulário" />
+    return (
+      <div className="flex justify-center py-12" aria-label="A carregar formulário">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
   }
   if (!isNew && isError) {
-    return <Alert severity="error">{(error as Error).message}</Alert>
+    return (
+      <Alert variant="destructive">
+        <AlertDescription>{(error as Error).message}</AlertDescription>
+      </Alert>
+    )
   }
   if (isNew) {
     return <FormEditorFields key="new" initial={null} />
   }
 
   if (!existing) {
-    return <Alert severity="warning">Formulário não encontrado.</Alert>
+    return (
+      <Alert variant="warning">
+        <AlertDescription>Formulário não encontrado.</AlertDescription>
+      </Alert>
+    )
   }
 
   return (
@@ -149,105 +158,118 @@ function FormEditorFields({
       ]
 
   return (
-    <Box>
-      <PageBreadcrumbs items={crumbs} />
-      <Typography variant="h4" component="h2" gutterBottom>
-        {isNew ? 'Novo formulário' : 'Editar formulário'}
-      </Typography>
+    <div>
+      <PageHeader
+        breadcrumbs={crumbs}
+        title={isNew ? 'Novo formulário' : 'Editar formulário'}
+      />
       <ApiConfigAlert />
       {err ? (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {(err as Error).message}
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>{(err as Error).message}</AlertDescription>
         </Alert>
       ) : null}
-      <Box component="form" onSubmit={handleSubmit}>
-        <Stack spacing={3} sx={{ maxWidth: { xs: '100%', sm: 720 } }}>
-          <TextField
-            label="Título"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-            fullWidth
-          />
-          <Stack direction="row" alignItems="center" justifyContent="space-between">
-            <Typography variant="subtitle1">Campos</Typography>
+      <form onSubmit={handleSubmit}>
+        <GlassPanel className="max-w-3xl space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="form-title">Título</Label>
+            <Input
+              id="form-title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="font-medium">Campos</p>
             <Button
               type="button"
-              startIcon={<AddIcon />}
+              variant="outline"
               onClick={() => setFields((f) => [...f, newField()])}
             >
+              <Plus />
               Adicionar campo
             </Button>
-          </Stack>
+          </div>
+
           {fields.map((field, index) => (
-            <Stack
+            <div
               key={field.id}
-              direction={{ xs: 'column', sm: 'row' }}
-              spacing={2}
-              alignItems={{ sm: 'flex-start' }}
+              className="flex flex-col gap-3 rounded-xl border border-border/60 p-4 sm:flex-row sm:items-start"
             >
-              <TextField
-                label="Texto da pergunta"
-                value={field.label}
-                onChange={(e) => updateField(index, { label: e.target.value })}
-                fullWidth
-                sx={{ flex: 1 }}
-              />
-              <FormControl sx={{ minWidth: 160 }}>
-                <InputLabel id={`type-${field.id}`}>Tipo</InputLabel>
+              <div className="min-w-0 flex-1 space-y-2">
+                <Label htmlFor={`label-${field.id}`}>Texto da pergunta</Label>
+                <Input
+                  id={`label-${field.id}`}
+                  value={field.label}
+                  onChange={(e) => updateField(index, { label: e.target.value })}
+                />
+              </div>
+              <div className="w-full space-y-2 sm:w-40">
+                <Label htmlFor={`type-${field.id}`}>Tipo</Label>
                 <Select
-                  labelId={`type-${field.id}`}
-                  label="Tipo"
                   value={field.type}
-                  onChange={(e) =>
+                  onValueChange={(value) =>
                     updateField(index, {
-                      type: e.target.value as FormFieldSchema['type'],
+                      type: value as FormFieldSchema['type'],
                     })
                   }
                 >
-                  <MenuItem value="text">Texto curto</MenuItem>
-                  <MenuItem value="textarea">Texto longo</MenuItem>
-                  <MenuItem value="number">Número</MenuItem>
-                  <MenuItem value="date">Data</MenuItem>
-                  <MenuItem value="select">Escolha</MenuItem>
-                  <MenuItem value="multiselect">Múltipla escolha</MenuItem>
+                  <SelectTrigger id={`type-${field.id}`}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="text">Texto curto</SelectItem>
+                    <SelectItem value="textarea">Texto longo</SelectItem>
+                    <SelectItem value="number">Número</SelectItem>
+                    <SelectItem value="date">Data</SelectItem>
+                    <SelectItem value="select">Escolha</SelectItem>
+                    <SelectItem value="multiselect">Múltipla escolha</SelectItem>
+                  </SelectContent>
                 </Select>
-              </FormControl>
-              <TextField
-                label="Opções (separadas por vírgula)"
-                value={(field.options ?? []).join(', ')}
-                onChange={(e) =>
-                  updateField(index, {
-                    options: e.target.value
-                      .split(',')
-                      .map((s) => s.trim())
-                      .filter(Boolean),
-                  })
-                }
-                disabled={!isOptionFieldType(field.type)}
-                fullWidth
-                sx={{ flex: 1 }}
-              />
+              </div>
+              <div className="min-w-0 flex-1 space-y-2">
+                <Label htmlFor={`options-${field.id}`}>
+                  Opções (separadas por vírgula)
+                </Label>
+                <Input
+                  id={`options-${field.id}`}
+                  value={(field.options ?? []).join(', ')}
+                  onChange={(e) =>
+                    updateField(index, {
+                      options: e.target.value
+                        .split(',')
+                        .map((s) => s.trim())
+                        .filter(Boolean),
+                    })
+                  }
+                  disabled={!isOptionFieldType(field.type)}
+                />
+              </div>
               <Button
                 type="button"
-                color="error"
+                variant="ghost"
+                size="icon"
+                className="shrink-0 text-destructive hover:text-destructive"
                 aria-label="Remover campo"
                 onClick={() => removeField(index)}
               >
-                <DeleteOutlineIcon />
+                <Trash2 className="h-4 w-4" />
               </Button>
-            </Stack>
+            </div>
           ))}
-          <Stack direction="row" spacing={2}>
-            <Button type="submit" variant="contained" disabled={pending}>
+
+          <div className="flex flex-wrap gap-2">
+            <Button type="submit" disabled={pending}>
               Guardar
             </Button>
-            <Button component={Link} to="/forms">
-              Voltar
+            <Button type="button" variant="outline" asChild>
+              <Link to="/forms">Voltar</Link>
             </Button>
-          </Stack>
-        </Stack>
-      </Box>
-    </Box>
+          </div>
+        </GlassPanel>
+      </form>
+    </div>
   )
 }

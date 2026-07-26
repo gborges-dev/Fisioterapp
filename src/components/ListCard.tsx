@@ -1,56 +1,29 @@
-import {
-  Card,
-  CardActions,
-  CardContent,
-  type CardProps,
-} from '@mui/material'
 import { memo, type ReactNode } from 'react'
+
+import { cn } from '@/lib/utils'
 
 export const ListCard = memo(function ListCard({
   children,
   actions,
-  contentSx,
-  ...cardProps
+  className,
 }: {
   children: ReactNode
   actions?: ReactNode
-  contentSx?: CardProps['sx']
-} & Omit<CardProps, 'children'>) {
+  className?: string
+}) {
   return (
-    <Card
-      variant="outlined"
-      {...cardProps}
-      sx={{
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        borderRadius: 2,
-        transition: (t) =>
-          t.transitions.create(['box-shadow', 'border-color'], {
-            duration: t.transitions.duration.shorter,
-          }),
-        '&:hover': {
-          borderColor: 'primary.light',
-          boxShadow: (t) => t.shadows[2],
-        },
-        ...cardProps.sx,
-      }}
+    <div
+      className={cn(
+        'glass lift flex h-full flex-col rounded-2xl transition-colors',
+        className,
+      )}
     >
-      <CardContent sx={{ flexGrow: 1, pt: 2, ...contentSx }}>{children}</CardContent>
+      <div className="flex flex-1 flex-col p-5 pt-4">{children}</div>
       {actions ? (
-        <CardActions
-          sx={{
-            justifyContent: 'flex-end',
-            px: 2,
-            pb: 2,
-            pt: 0,
-            flexWrap: 'wrap',
-            gap: 0.5,
-          }}
-        >
+        <div className="flex flex-wrap justify-end gap-1 px-5 pb-4 pt-0">
           {actions}
-        </CardActions>
+        </div>
       ) : null}
-    </Card>
+    </div>
   )
 })

@@ -1,10 +1,9 @@
 import type { ReactNode } from 'react'
-import { ThemeProvider } from '@mui/material/styles'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
+import { Toaster } from 'sonner'
 
-import { appTheme } from '../../theme/appTheme'
 import { ToastProvider } from './ToastProvider'
 import { useToast } from './useToast'
 
@@ -28,25 +27,26 @@ function Demo() {
   )
 }
 
-function renderWithTheme(ui: ReactNode) {
+function renderWithToaster(ui: ReactNode) {
   return render(
-    <ThemeProvider theme={appTheme}>
-      <ToastProvider>{ui}</ToastProvider>
-    </ThemeProvider>,
+    <ToastProvider>
+      <Toaster />
+      {ui}
+    </ToastProvider>,
   )
 }
 
 describe('ToastProvider', () => {
   it('mostra mensagem de sucesso', async () => {
     const user = userEvent.setup()
-    renderWithTheme(<Demo />)
+    renderWithToaster(<Demo />)
     await user.click(screen.getByRole('button', { name: 'Sucesso' }))
     expect(await screen.findByText('Operação concluída.')).toBeInTheDocument()
   })
 
   it('mostra mensagem de erro a partir de string ou Error', async () => {
     const user = userEvent.setup()
-    renderWithTheme(<Demo />)
+    renderWithToaster(<Demo />)
     await user.click(screen.getByRole('button', { name: 'Erro string' }))
     expect(await screen.findByText('Falhou.')).toBeInTheDocument()
 

@@ -1,12 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { ThemeProvider } from '@mui/material/styles'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { Toaster } from 'sonner'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ToastProvider } from '../../../components/toast'
-import { appTheme } from '../../../theme/appTheme'
 import { PatientFormPage } from './PatientFormPage'
 
 const { navigateMock, saveMutateAsync, stepValidationOverrides } = vi.hoisted(
@@ -50,10 +49,7 @@ vi.mock('../utils/patientStepValidation', async (importOriginal) => {
 })
 
 function formScope() {
-  const heading = screen.getByRole('heading', { name: 'Novo paciente' })
-  const root = heading.parentElement
-  if (!root) throw new Error('contentor do formulário não encontrado')
-  return within(root)
+  return within(document.body)
 }
 
 function renderNewPatientForm() {
@@ -62,15 +58,14 @@ function renderNewPatientForm() {
   })
   return render(
     <QueryClientProvider client={qc}>
-      <ThemeProvider theme={appTheme}>
-        <ToastProvider>
-          <MemoryRouter initialEntries={['/patients/new']}>
-            <Routes>
-              <Route path="/patients/new" element={<PatientFormPage />} />
-            </Routes>
-          </MemoryRouter>
-        </ToastProvider>
-      </ThemeProvider>
+      <ToastProvider>
+        <Toaster />
+        <MemoryRouter initialEntries={['/patients/new']}>
+          <Routes>
+            <Route path="/patients/new" element={<PatientFormPage />} />
+          </Routes>
+        </MemoryRouter>
+      </ToastProvider>
     </QueryClientProvider>,
   )
 }

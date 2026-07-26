@@ -1,19 +1,11 @@
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Stack,
-  Tab,
-  Tabs,
-  Typography,
-  useMediaQuery,
-  useTheme,
-} from '@mui/material'
+import { Loader2 } from 'lucide-react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 
-import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
-import { ApiConfigAlert } from '../../../components/ApiConfigAlert'
+import { GlassPanel, PageHeader } from '@/components/AppShell'
+import { ApiConfigAlert } from '@/components/ApiConfigAlert'
+import { QueryErrorState } from '@/components/QueryErrorState'
+import { Button } from '@/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { DocumentsPanel } from '../../documents/components/DocumentsPanel'
 import { PatientEvaluationFormsPanel } from '../../evaluation-forms/components/PatientEvaluationFormsPanel'
 import { EvolutionPanel } from '../../evolution/components/EvolutionPanel'
@@ -28,12 +20,10 @@ import { calculateAge } from '../utils/age'
 function Field({ label, value }: { label: string; value: string | null | undefined }) {
   const v = value?.trim()
   return (
-    <Box sx={{ mb: 1.5 }}>
-      <Typography variant="caption" color="text.secondary">
-        {label}
-      </Typography>
-      <Typography sx={{ whiteSpace: 'pre-wrap' }}>{v || '—'}</Typography>
-    </Box>
+    <div className="mb-3">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="whitespace-pre-wrap">{v || '—'}</p>
+    </div>
   )
 }
 
@@ -57,8 +47,8 @@ function PatientDadosPanel({
   data: NonNullable<ReturnType<typeof usePatient>['data']>
 }) {
   return (
-    <Box>
-      <Box sx={{ mb: 3 }}>
+    <div>
+      <GlassPanel className="mb-6">
         <Field
           label="Data de nascimento"
           value={data.birth_date?.slice(0, 10) ?? null}
@@ -79,32 +69,26 @@ function PatientDadosPanel({
         <Field label="CPF" value={data.cpf} />
         <Field label="Motivo da consulta" value={data.consultation_reason} />
         <Field label="Notas" value={data.notes} />
-      </Box>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-        <Button
-          variant="outlined"
-          component={Link}
-          to={`/patients/${data.id}/edit`}
-        >
-          Editar paciente
+      </GlassPanel>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Button variant="outline" asChild>
+          <Link to={`/patients/${data.id}/edit`}>Editar paciente</Link>
         </Button>
-        <Button component={Link} to="/patients">
-          Voltar à lista
+        <Button variant="ghost" asChild>
+          <Link to="/patients">Voltar à lista</Link>
         </Button>
-      </Stack>
-    </Box>
+      </div>
+    </div>
   )
 }
 
 export function PatientDetailPage() {
   const { id } = useParams<{ id: string }>()
   const [searchParams, setSearchParams] = useSearchParams()
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
-  const { data, isLoading, isError, error } = usePatient(id)
+  const { data, isLoading, isError, error, refetch } = usePatient(id)
   const activeTab = parsePatientTab(searchParams)
 
-  const handleTabChange = (_: React.SyntheticEvent, value: PatientTab) => {
+  const handleTabChange = (value: PatientTab) => {
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev)
@@ -117,63 +101,68 @@ export function PatientDetailPage() {
   }
 
   return (
-    <Box>
-      <PageBreadcrumbs
-        items={[
+    <div>
+      <PageHeader
+        breadcrumbs={[
           { label: 'Painel', to: '/' },
           { label: 'Pacientes', to: '/patients' },
           ...(data
             ? [{ label: data.full_name }]
             : [{ label: 'Paciente' }]),
         ]}
+        title={data?.full_name ?? 'Paciente'}
       />
+
       <ApiConfigAlert />
-      {isLoading ? <CircularProgress /> : null}
+
+      {isLoading ? (
+        <div className="flex justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      ) : null}
       {isError ? (
-        <Alert severity="error">{(error as Error).message}</Alert>
+        <QueryErrorState
+          error={error}
+          title="Não foi possível abrir o paciente"
+          onRetry={() => void refetch()}
+          backTo={{ label: 'Voltar à lista', href: '/patients' }}
+        />
       ) : null}
       {data ? (
-        <>
-          <Typography variant="h4" component="h2" gutterBottom>
-            {data.full_name}
-          </Typography>
-
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: isMobile ? 'column-reverse' : 'column',
-              gap: 2,
-              mt: 1,
-            }}
-          >
-            <Tabs
-              value={activeTab}
-              onChange={handleTabChange}
-              variant={isMobile ? 'scrollable' : 'standard'}
-              scrollButtons="auto"
-              allowScrollButtonsMobile
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => handleTabChange(value as PatientTab)}
+          className="mt-2"
+        >
+          <div className="flex flex-col-reverse gap-4 md:flex-col">
+            <TabsList
+              className="h-auto w-full justify-start overflow-x-auto"
               aria-label="Secções do paciente"
             >
               {PATIENT_TABS.map((tab) => (
-                <Tab key={tab} value={tab} label={TAB_LABELS[tab]} />
+                <TabsTrigger key={tab} value={tab} className="shrink-0">
+                  {TAB_LABELS[tab]}
+                </TabsTrigger>
               ))}
-            </Tabs>
+            </TabsList>
 
-            <Box role="tabpanel">
-              {activeTab === 'dados' ? <PatientDadosPanel data={data} /> : null}
-              {activeTab === 'fichas' ? (
+            <div role="tabpanel">
+              <TabsContent value="dados" className="mt-0">
+                <PatientDadosPanel data={data} />
+              </TabsContent>
+              <TabsContent value="fichas" className="mt-0">
                 <PatientEvaluationFormsPanel patientId={data.id} />
-              ) : null}
-              {activeTab === 'evolucao' ? (
+              </TabsContent>
+              <TabsContent value="evolucao" className="mt-0">
                 <EvolutionPanel patientId={data.id} />
-              ) : null}
-              {activeTab === 'documentos' ? (
+              </TabsContent>
+              <TabsContent value="documentos" className="mt-0">
                 <DocumentsPanel patientId={data.id} />
-              ) : null}
-            </Box>
-          </Box>
-        </>
+              </TabsContent>
+            </div>
+          </div>
+        </Tabs>
       ) : null}
-    </Box>
+    </div>
   )
 }

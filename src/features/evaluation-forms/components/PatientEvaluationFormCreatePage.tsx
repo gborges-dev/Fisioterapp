@@ -1,25 +1,26 @@
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  Stack,
-  TextField,
-  Typography,
-  type SelectChangeEvent,
-} from '@mui/material'
+import { Loader2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 
-import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
-import { ApiConfigAlert } from '../../../components/ApiConfigAlert'
-import { useToast } from '../../../components/toast'
-import { validateRequiredFields } from '../../../lib/formFieldValidation'
-import type { FormFieldSchema } from '../../../types/database.types'
+import { PageHeader } from '@/components/AppShell'
+import { ApiConfigAlert } from '@/components/ApiConfigAlert'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { useToast } from '@/components/toast'
+import { getFriendlyErrorMessage } from '@/lib/apiError'
+import { validateRequiredFields } from '@/lib/formFieldValidation'
+import { queryKeys } from '@/lib/queryKeys'
+import type { FormFieldSchema } from '@/types/database.types'
 import { usePatient } from '../../patients/hooks/usePatients'
 import { patientTabPath } from '../../patients/patientTabs'
 import { EvaluationFormFieldsRenderer } from './EvaluationFormFieldsRenderer'
@@ -33,6 +34,7 @@ export function PatientEvaluationFormCreatePage() {
   const { data: templates, isLoading: loadingTemplates } = useEvaluationFormTemplates()
   const create = useCreatePatientEvaluationForm(patientId ?? '')
   const navigate = useNavigate()
+  const qc = useQueryClient()
   const { showSuccess, showError } = useToast()
 
   const [templateId, setTemplateId] = useState('')
@@ -54,8 +56,7 @@ export function PatientEvaluationFormCreatePage() {
     [selectedTemplate],
   )
 
-  const handleTemplateChange = (e: SelectChangeEvent) => {
-    const nextId = e.target.value
+  const handleTemplateChange = (nextId: string) => {
     setTemplateId(nextId)
     setAnswers({})
   }
@@ -84,20 +85,27 @@ export function PatientEvaluationFormCreatePage() {
         evaluationDate,
       })
       showSuccess('Ficha adicionada com sucesso.')
-      void navigate(patientTabPath(patientId, 'evolucao'))
+      await qc.refetchQueries({
+        queryKey: queryKeys.evaluationForms.byPatient(patientId),
+      })
+      void navigate(patientTabPath(patientId, 'evolucao'), { replace: true })
     } catch (err) {
       showError(err instanceof Error ? err : new Error(String(err)))
     }
   }
 
   if (!patientId) {
-    return <Alert severity="error">Paciente inválido.</Alert>
+    return (
+      <Alert variant="destructive">
+        <AlertDescription>Paciente inválido.</AlertDescription>
+      </Alert>
+    )
   }
 
   return (
-    <Box>
-      <PageBreadcrumbs
-        items={[
+    <div>
+      <PageHeader
+        breadcrumbs={[
           { label: 'Painel', to: '/' },
           { label: 'Pacientes', to: '/patients' },
           ...(patient
@@ -111,97 +119,100 @@ export function PatientEvaluationFormCreatePage() {
               ]
             : [{ label: 'Nova ficha' }]),
         ]}
+        title="Adicionar ficha de avaliação"
       />
-      <Typography variant="h4" component="h2" gutterBottom>
-        Adicionar ficha de avaliação
-      </Typography>
       <ApiConfigAlert />
 
-      {loadingTemplates ? <CircularProgress /> : null}
+      {loadingTemplates ? (
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      ) : null}
       {templates && templates.length === 0 ? (
-        <Alert severity="info" sx={{ mb: 2 }}>
-          Não existem modelos de ficha.{' '}
-          <Link to="/evaluation-forms/new">Crie um modelo</Link> antes de adicionar
-          fichas ao paciente.
+        <Alert className="mb-4">
+          <AlertDescription>
+            Não existem modelos de ficha.{' '}
+            <Link to="/evaluation-forms/new" className="text-primary underline">
+              Crie um modelo
+            </Link>{' '}
+            antes de adicionar fichas ao paciente.
+          </AlertDescription>
         </Alert>
       ) : null}
 
-      <Box
-        component="form"
+      <form
         onSubmit={(e) => void handleSubmit(e)}
         noValidate
-        sx={{ maxWidth: { xs: '100%', sm: 640 } }}
+        className="max-w-xl space-y-4"
       >
-        <Stack spacing={2}>
-          <FormControl fullWidth required>
-            <InputLabel id="template-label">Modelo de ficha</InputLabel>
-            <Select
-              labelId="template-label"
-              label="Modelo de ficha"
-              value={templateId}
-              onChange={handleTemplateChange}
-            >
-              <MenuItem value="">
-                <em>Selecionar modelo…</em>
-              </MenuItem>
+        <div className="space-y-2">
+          <Label htmlFor="template-select">Modelo de ficha</Label>
+          <Select
+            value={templateId || undefined}
+            onValueChange={handleTemplateChange}
+            required
+          >
+            <SelectTrigger id="template-select">
+              <SelectValue placeholder="Selecionar modelo…" />
+            </SelectTrigger>
+            <SelectContent>
               {(templates ?? []).map((t) => (
-                <MenuItem key={t.id} value={t.id}>
+                <SelectItem key={t.id} value={t.id}>
                   {t.title}
-                </MenuItem>
+                </SelectItem>
               ))}
-            </Select>
-          </FormControl>
+            </SelectContent>
+          </Select>
+        </div>
 
-          <TextField
+        <div className="space-y-2">
+          <Label htmlFor="evaluation-date">Data da avaliação</Label>
+          <Input
+            id="evaluation-date"
             type="date"
-            label="Data da avaliação"
             value={evaluationDate}
             onChange={(e) => setEvaluationDate(e.target.value)}
-            fullWidth
             required
-            slotProps={{ inputLabel: { shrink: true } }}
           />
+        </div>
 
-          {selectedTemplate ? (
-            <>
-              {selectedTemplate.description?.trim() ? (
-                <Typography variant="body2" color="text.secondary">
-                  {selectedTemplate.description}
-                </Typography>
-              ) : null}
-              <EvaluationFormFieldsRenderer
-                fields={fields}
-                answers={answers}
-                onChange={(fieldId, value) =>
-                  setAnswers((prev) => ({ ...prev, [fieldId]: value }))
-                }
-              />
-            </>
-          ) : null}
-
-          {create.error ? (
-            <Alert severity="error">{(create.error as Error).message}</Alert>
-          ) : null}
-
-          <Stack direction="row" spacing={2} justifyContent="flex-end">
-            <Button
-              component={Link}
-              to={`/patients/${patientId}/evaluation-forms`}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={
-                create.isPending || !templateId || (templates?.length ?? 0) === 0
+        {selectedTemplate ? (
+          <>
+            {selectedTemplate.description?.trim() ? (
+              <p className="text-sm text-muted-foreground">
+                {selectedTemplate.description}
+              </p>
+            ) : null}
+            <EvaluationFormFieldsRenderer
+              fields={fields}
+              answers={answers}
+              onChange={(fieldId, value) =>
+                setAnswers((prev) => ({ ...prev, [fieldId]: value }))
               }
-            >
-              Guardar ficha
-            </Button>
-          </Stack>
-        </Stack>
-      </Box>
-    </Box>
+            />
+          </>
+        ) : null}
+
+        {create.error ? (
+          <Alert variant="destructive">
+            <AlertDescription>
+              {getFriendlyErrorMessage(create.error)}
+            </AlertDescription>
+          </Alert>
+        ) : null}
+
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button variant="outline" asChild>
+            <Link to={`/patients/${patientId}/evaluation-forms`}>Cancelar</Link>
+          </Button>
+          <Button
+            type="submit"
+            disabled={
+              create.isPending || !templateId || (templates?.length ?? 0) === 0
+            }
+          >
+            Guardar ficha
+          </Button>
+        </div>
+      </form>
+    </div>
   )
 }

@@ -1,42 +1,38 @@
-import AddIcon from '@mui/icons-material/Add'
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
-import LinkIcon from '@mui/icons-material/Link'
-import SearchIcon from '@mui/icons-material/Search'
-import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
 import {
-  Alert,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Grid,
-  IconButton,
-  InputAdornment,
-  List,
-  ListItem,
-  ListItemText,
-  Stack,
-  TextField,
-  Tooltip,
-  Typography,
-} from '@mui/material'
+  Eye,
+  Link as LinkIcon,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+} from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import { ConfirmDeleteDialog } from '../../../components/ConfirmDeleteDialog'
-import { ListCard } from '../../../components/ListCard'
-import { ListPageSkeleton } from '../../../components/ListPageSkeleton'
-import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
-import { ApiConfigAlert } from '../../../components/ApiConfigAlert'
-import { useToast } from '../../../components/toast'
-import { useSortState, useTableFilterSort } from '../../../hooks/useTableFilterSort'
-import type { FormFieldType } from '../../../types/database.types'
+import { EmptyState, GlassPanel, PageHeader } from '@/components/AppShell'
+import { ApiConfigAlert } from '@/components/ApiConfigAlert'
+import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog'
+import { ListCard } from '@/components/ListCard'
+import { ListPageSkeleton } from '@/components/ListPageSkeleton'
+import { useToast } from '@/components/toast'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import { useSortState, useTableFilterSort } from '@/hooks/useTableFilterSort'
+import type { FormFieldType } from '@/types/database.types'
 import { useFormTemplateMutations, useFormTemplates } from '../hooks/useFormTemplates'
 import { parseFormSchema } from '../services/formsApi'
 import type { FormTemplateRow } from '../types'
@@ -158,224 +154,191 @@ export function FormsListPage() {
   }
 
   return (
-    <Box>
-      <PageBreadcrumbs
-        items={[
+    <div>
+      <PageHeader
+        breadcrumbs={[
           { label: 'Painel', to: '/' },
           { label: 'Formulários' },
         ]}
+        title="Formulários"
+        actions={
+          <Button asChild>
+            <Link to="/forms/new">
+              <Plus />
+              Novo formulário
+            </Link>
+          </Button>
+        }
       />
-      <Box
-        sx={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 2,
-          mb: 2,
-        }}
-      >
-        <Typography variant="h4" component="h2">
-          Formulários
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          component={Link}
-          to="/forms/new"
-        >
-          Novo formulário
-        </Button>
-      </Box>
 
       {!isLoading && !isError ? (
-      <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid size={{ xs: 12, sm: 4 }}>
-          <Card variant="outlined">
-            <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
-              <Typography color="text.secondary" variant="body2">
-                Total de modelos
-              </Typography>
-              <Typography variant="h5">{stats.total}</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid size={{ xs: 12, sm: 4 }}>
-          <Card variant="outlined">
-            <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
-              <Typography color="text.secondary" variant="body2">
-                Atualizados (7 dias)
-              </Typography>
-              <Typography variant="h5">{stats.recent}</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid size={{ xs: 12, sm: 4 }}>
-          <Card variant="outlined">
-            <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
-              <Typography color="text.secondary" variant="body2">
-                Média de perguntas / formulário
-              </Typography>
-              <Typography variant="h5">{stats.avgFields}</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+        <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {[
+            { label: 'Total de modelos', value: stats.total },
+            { label: 'Atualizados (7 dias)', value: stats.recent },
+            { label: 'Média de perguntas / formulário', value: stats.avgFields },
+          ].map((stat) => (
+            <GlassPanel key={stat.label} className="py-4">
+              <p className="text-sm text-muted-foreground">{stat.label}</p>
+              <p className="display mt-1 text-2xl font-semibold">{stat.value}</p>
+            </GlassPanel>
+          ))}
+        </div>
       ) : null}
 
       <ApiConfigAlert />
-      <TextField
-        placeholder="Pesquisar por título ou data…"
-        value={filter}
-        onChange={(e) => setFilter(e.target.value)}
-        size="small"
-        fullWidth
-        sx={{ mb: 2, maxWidth: { xs: 'none', sm: 480 } }}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon fontSize="small" color="action" />
-            </InputAdornment>
-          ),
-        }}
-      />
+
+      <div className="relative mb-4 max-w-md">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="Pesquisar por título ou data…"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          className="pl-9"
+        />
+      </div>
 
       {isLoading ? <ListPageSkeleton /> : null}
       {isError ? (
-        <Alert severity="error">{(error as Error).message}</Alert>
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>{(error as Error).message}</AlertDescription>
+        </Alert>
       ) : null}
       {data && data.length === 0 ? (
-        <Typography>Nenhum formulário.</Typography>
+        <EmptyState title="Nenhum formulário." />
       ) : null}
       {data && data.length > 0 ? (
-        <Box>
-          <Stack
-            direction="row"
-            flexWrap="wrap"
-            alignItems="center"
-            gap={1}
-            sx={{ mb: 2 }}
-          >
-            <Typography variant="body2" color="text.secondary" sx={{ width: { xs: '100%', sm: 'auto' } }}>
+        <div>
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <span className="w-full text-sm text-muted-foreground sm:w-auto">
               Ordenar por
-            </Typography>
+            </span>
             {(
               [
                 { key: 'title' as const, label: 'Título' },
                 { key: 'updated_at' as const, label: 'Atualização' },
               ] as const
             ).map(({ key, label }) => (
-              <Chip
+              <Badge
                 key={key}
-                size="small"
-                label={`${label}${orderBy === key ? (order === 'asc' ? ' ↑' : ' ↓') : ''}`}
+                variant={orderBy === key ? 'default' : 'outline'}
+                className="cursor-pointer"
                 onClick={() => handleRequestSort(key)}
-                color={orderBy === key ? 'primary' : 'default'}
-                variant={orderBy === key ? 'filled' : 'outlined'}
-              />
+              >
+                {label}
+                {orderBy === key ? (order === 'asc' ? ' ↑' : ' ↓') : ''}
+              </Badge>
             ))}
-          </Stack>
-          <Grid container spacing={2}>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {filteredSorted.map((row) => (
-              <Grid key={row.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-                <ListCard
-                  actions={
-                    <>
-                      <Tooltip title="Pré-visualizar perguntas">
-                        <IconButton
-                          size="small"
+              <ListCard
+                key={row.id}
+                actions={
+                  <>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
                           aria-label="Pré-visualizar"
                           onClick={() => setPreviewRow(row)}
                         >
-                          <VisibilityOutlinedIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Editar">
-                        <IconButton
-                          component={Link}
-                          to={`/forms/${row.id}/edit`}
-                          size="small"
-                          color="primary"
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Pré-visualizar perguntas</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-primary"
                           aria-label="Editar formulário"
+                          asChild
                         >
-                          <EditOutlinedIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Copiar link público">
-                        <IconButton
-                          size="small"
+                          <Link to={`/forms/${row.id}/edit`}>
+                            <Pencil className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Editar</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
                           aria-label="Link público"
                           onClick={() => void handleCreateLink(row.id)}
                           disabled={createLink.isPending}
                         >
-                          <LinkIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Eliminar">
-                        <IconButton
-                          size="small"
-                          color="error"
+                          <LinkIcon className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Copiar link público</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
                           aria-label="Eliminar formulário"
                           onClick={() => setDeleteId(row.id)}
                         >
-                          <DeleteOutlineIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </>
-                  }
-                >
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                    {row.title}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    Atualizado em {formatDate(row.updated_at)}
-                  </Typography>
-                </ListCard>
-              </Grid>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Eliminar</TooltipContent>
+                    </Tooltip>
+                  </>
+                }
+              >
+                <p className="font-semibold">{row.title}</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Atualizado em {formatDate(row.updated_at)}
+                </p>
+              </ListCard>
             ))}
-          </Grid>
-        </Box>
+          </div>
+        </div>
       ) : null}
 
-      <Dialog
-        open={Boolean(previewRow)}
-        onClose={() => setPreviewRow(null)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Pré-visualização: {previewRow?.title}</DialogTitle>
-        <DialogContent dividers>
+      <Dialog open={Boolean(previewRow)} onOpenChange={(v) => !v && setPreviewRow(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Pré-visualização: {previewRow?.title}</DialogTitle>
+          </DialogHeader>
           {previewFields.length === 0 ? (
-            <Typography color="text.secondary">Sem perguntas definidas.</Typography>
+            <p className="text-sm text-muted-foreground">Sem perguntas definidas.</p>
           ) : (
-            <List dense disablePadding>
+            <ul className="divide-y divide-border">
               {previewFields.map((f) => (
-                <ListItem key={f.id} disableGutters sx={{ py: 0.5, alignItems: 'flex-start' }}>
-                  <ListItemText
-                    primary={f.label}
-                    secondary={
-                      <Box sx={{ mt: 0.5, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        <Chip
-                          size="small"
-                          label={fieldTypeLabel(f.type)}
-                          variant="outlined"
-                          component="span"
-                        />
-                        {f.required ? (
-                          <Chip size="small" label="Obrigatório" color="primary" variant="outlined" component="span" />
-                        ) : null}
-                      </Box>
-                    }
-                    secondaryTypographyProps={{ component: 'div' }}
-                  />
-                </ListItem>
+                <li key={f.id} className="py-2">
+                  <p className="font-medium">{f.label}</p>
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    <Badge variant="outline">{fieldTypeLabel(f.type)}</Badge>
+                    {f.required ? (
+                      <Badge variant="outline">Obrigatório</Badge>
+                    ) : null}
+                  </div>
+                </li>
               ))}
-            </List>
+            </ul>
           )}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setPreviewRow(null)}>
+              Fechar
+            </Button>
+          </DialogFooter>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setPreviewRow(null)}>Fechar</Button>
-        </DialogActions>
       </Dialog>
 
       <ConfirmDeleteDialog
@@ -392,6 +355,6 @@ export function FormsListPage() {
         onCancel={() => setDeleteId(null)}
         onConfirm={() => void confirmDelete()}
       />
-    </Box>
+    </div>
   )
 }

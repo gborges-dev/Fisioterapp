@@ -1,31 +1,31 @@
-import {
-  Alert,
-  Box,
-  Button,
-  Checkbox,
-  CircularProgress,
-  FormControl,
-  FormControlLabel,
-  FormGroup,
-  FormLabel,
-  MenuItem,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material'
+import { Loader2 } from 'lucide-react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 
-import { toastError, toastSuccess } from '../../../components/toast'
-import { queryKeys } from '../../../lib/queryKeys'
+import { GlassPanel } from '@/components/AppShell'
+import { toastError, toastSuccess } from '@/components/toast'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
 import {
   parseMultiselectAnswer,
   serializeMultiselectAnswer,
-} from '../../../lib/formAnswers'
-import { validateRequiredFields } from '../../../lib/formFieldValidation'
-import { isApiConfigured } from '../../../lib/apiClient'
-import type { FormFieldSchema, Json } from '../../../types/database.types'
+} from '@/lib/formAnswers'
+import { validateRequiredFields } from '@/lib/formFieldValidation'
+import { isApiConfigured } from '@/lib/apiClient'
+import { queryKeys } from '@/lib/queryKeys'
+import type { FormFieldSchema, Json } from '@/types/database.types'
 import {
   fetchPublicFormByToken,
   submitPublicForm,
@@ -86,71 +86,68 @@ export function PublicFormPage() {
 
   if (!isApiConfigured()) {
     return (
-      <Box sx={{ p: 2 }}>
-        <Alert severity="warning">Configuração em falta.</Alert>
-      </Box>
+      <div className="p-4">
+        <Alert variant="warning">
+          <AlertDescription>Configuração em falta.</AlertDescription>
+        </Alert>
+      </div>
     )
   }
 
   if (!token) {
     return (
-      <Box sx={{ p: 2 }}>
-        <Alert severity="error">Link inválido.</Alert>
-      </Box>
+      <div className="p-4">
+        <Alert variant="destructive">
+          <AlertDescription>Link inválido.</AlertDescription>
+        </Alert>
+      </div>
     )
   }
 
   if (formQuery.isLoading) {
     return (
-      <Box sx={{ p: 4, display: 'flex', justifyContent: 'center' }}>
-        <CircularProgress />
-      </Box>
+      <div className="flex justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
     )
   }
 
   if (formQuery.isError) {
     return (
-      <Box sx={{ p: 2 }}>
-        <Alert severity="error">{(formQuery.error as Error).message}</Alert>
-      </Box>
+      <div className="p-4">
+        <Alert variant="destructive">
+          <AlertDescription>{(formQuery.error as Error).message}</AlertDescription>
+        </Alert>
+      </div>
     )
   }
 
   if (!formQuery.data) {
     return (
-      <Box sx={{ p: 2 }}>
-        <Alert severity="info">Formulário não encontrado ou expirado.</Alert>
-      </Box>
+      <div className="p-4">
+        <Alert>
+          <AlertDescription>Formulário não encontrado ou expirado.</AlertDescription>
+        </Alert>
+      </div>
     )
   }
 
   if (done) {
     return (
-      <Box sx={{ p: 2, maxWidth: 560, mx: 'auto' }}>
-        <Typography variant="h5" gutterBottom>
-          Obrigado
-        </Typography>
-        <Typography>A sua resposta foi registada.</Typography>
-      </Box>
+      <main className="mx-auto min-h-svh max-w-lg p-4">
+        <GlassPanel>
+          <h1 className="display text-2xl font-semibold">Obrigado</h1>
+          <p className="mt-2 text-muted-foreground">A sua resposta foi registada.</p>
+        </GlassPanel>
+      </main>
     )
   }
 
   return (
-    <Box
-      component="main"
-      sx={{
-        p: 2,
-        maxWidth: 560,
-        mx: 'auto',
-        minHeight: '100vh',
-        boxSizing: 'border-box',
-      }}
-    >
-      <Typography variant="h5" component="h1" gutterBottom>
-        {formQuery.data.title}
-      </Typography>
-      <Box component="form" onSubmit={handleSubmit} noValidate>
-        <Stack spacing={2}>
+    <main className="mx-auto box-border min-h-svh max-w-lg p-4">
+      <GlassPanel>
+        <h1 className="display mb-6 text-2xl font-semibold">{formQuery.data.title}</h1>
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
           {fields.map((field) => (
             <FieldInput
               key={field.id}
@@ -162,21 +159,17 @@ export function PublicFormPage() {
             />
           ))}
           {submit.error ? (
-            <Alert severity="error">
-              {(submit.error as Error).message}
+            <Alert variant="destructive">
+              <AlertDescription>{(submit.error as Error).message}</AlertDescription>
             </Alert>
           ) : null}
-          <Button
-            type="submit"
-            variant="contained"
-            size="large"
-            disabled={submit.isPending}
-          >
+          <Button type="submit" size="lg" className="w-full" disabled={submit.isPending}>
+            {submit.isPending ? <Loader2 className="animate-spin" /> : null}
             Enviar
           </Button>
-        </Stack>
-      </Box>
-    </Box>
+        </form>
+      </GlassPanel>
+    </main>
   )
 }
 
@@ -189,96 +182,123 @@ function FieldInput({
   value: string
   onChange: (v: string) => void
 }) {
+  const fieldId = `field-${field.id}`
+
   if (field.type === 'textarea') {
     return (
-      <TextField
-        label={field.label}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        required={field.required}
-        multiline
-        minRows={3}
-        fullWidth
-      />
+      <div className="space-y-2">
+        <Label htmlFor={fieldId}>
+          {field.label}
+          {field.required ? ' *' : ''}
+        </Label>
+        <Textarea
+          id={fieldId}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          required={field.required}
+          rows={3}
+        />
+      </div>
     )
   }
   if (field.type === 'number') {
     return (
-      <TextField
-        label={field.label}
-        type="number"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        required={field.required}
-        fullWidth
-      />
+      <div className="space-y-2">
+        <Label htmlFor={fieldId}>
+          {field.label}
+          {field.required ? ' *' : ''}
+        </Label>
+        <Input
+          id={fieldId}
+          type="number"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          required={field.required}
+        />
+      </div>
     )
   }
   if (field.type === 'date') {
     return (
-      <TextField
-        label={field.label}
-        type="date"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        required={field.required}
-        fullWidth
-        slotProps={{ inputLabel: { shrink: true } }}
-      />
+      <div className="space-y-2">
+        <Label htmlFor={fieldId}>
+          {field.label}
+          {field.required ? ' *' : ''}
+        </Label>
+        <Input
+          id={fieldId}
+          type="date"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          required={field.required}
+        />
+      </div>
     )
   }
   if (field.type === 'multiselect' && field.options?.length) {
     const selected = parseMultiselectAnswer(value)
     return (
-      <FormControl required={field.required} fullWidth>
-        <FormLabel>{field.label}</FormLabel>
-        <FormGroup>
+      <fieldset className="space-y-3">
+        <legend className="text-sm font-medium">
+          {field.label}
+          {field.required ? ' *' : ''}
+        </legend>
+        <div className="space-y-2">
           {field.options.map((opt) => (
-            <FormControlLabel
-              key={opt}
-              control={
-                <Checkbox
-                  checked={selected.includes(opt)}
-                  onChange={(e) => {
-                    const next = e.target.checked
-                      ? [...selected, opt]
-                      : selected.filter((s) => s !== opt)
-                    onChange(serializeMultiselectAnswer(next))
-                  }}
-                />
-              }
-              label={opt}
-            />
+            <div key={opt} className="flex items-center gap-2">
+              <Checkbox
+                id={`${fieldId}-${opt}`}
+                checked={selected.includes(opt)}
+                onCheckedChange={(checked) => {
+                  const next = checked
+                    ? [...selected, opt]
+                    : selected.filter((s) => s !== opt)
+                  onChange(serializeMultiselectAnswer(next))
+                }}
+              />
+              <Label htmlFor={`${fieldId}-${opt}`} className="font-normal">
+                {opt}
+              </Label>
+            </div>
           ))}
-        </FormGroup>
-      </FormControl>
+        </div>
+      </fieldset>
     )
   }
   if (field.type === 'select' && field.options?.length) {
     return (
-      <TextField
-        select
-        label={field.label}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        required={field.required}
-        fullWidth
-      >
-        {field.options.map((opt) => (
-          <MenuItem key={opt} value={opt}>
-            {opt}
-          </MenuItem>
-        ))}
-      </TextField>
+      <div className="space-y-2">
+        <Label htmlFor={fieldId}>
+          {field.label}
+          {field.required ? ' *' : ''}
+        </Label>
+        <Select value={value} onValueChange={onChange} required={field.required}>
+          <SelectTrigger id={fieldId}>
+            <SelectValue placeholder="Selecionar…" />
+          </SelectTrigger>
+          <SelectContent>
+            {field.options.map((opt) => (
+              <SelectItem key={opt} value={opt}>
+                {opt}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
     )
   }
   return (
-    <TextField
-      label={field.label}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      required={field.required}
-      fullWidth
-    />
+    <div className="space-y-2">
+      <Label htmlFor={fieldId}>
+        {field.label}
+        {field.required ? ' *' : ''}
+      </Label>
+      <Input
+        id={fieldId}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        required={field.required}
+      />
+    </div>
   )
 }

@@ -1,32 +1,31 @@
-import AddIcon from '@mui/icons-material/Add'
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
-import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined'
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
-import SearchIcon from '@mui/icons-material/Search'
-import TimelineOutlinedIcon from '@mui/icons-material/TimelineOutlined'
 import {
-  Alert,
-  Box,
-  Button,
-  Chip,
-  Grid,
-  IconButton,
-  InputAdornment,
-  Stack,
-  TextField,
-  Tooltip,
-  Typography,
-} from '@mui/material'
+  ClipboardList,
+  LineChart,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+} from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import { ConfirmDeleteDialog } from '../../../components/ConfirmDeleteDialog'
-import { ListCard } from '../../../components/ListCard'
-import { ListPageSkeleton } from '../../../components/ListPageSkeleton'
-import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
-import { ApiConfigAlert } from '../../../components/ApiConfigAlert'
-import { toastError, toastSuccess } from '../../../components/toast'
-import { useSortState, useTableFilterSort } from '../../../hooks/useTableFilterSort'
+import { EmptyState, PageHeader } from '@/components/AppShell'
+import { ApiConfigAlert } from '@/components/ApiConfigAlert'
+import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog'
+import { ListCard } from '@/components/ListCard'
+import { ListPageSkeleton } from '@/components/ListPageSkeleton'
+import { toastError, toastSuccess } from '@/components/toast'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import { cn } from '@/lib/utils'
+import { useSortState, useTableFilterSort } from '@/hooks/useTableFilterSort'
 import { usePatientMutations, usePatients } from '../hooks/usePatients'
 import { patientTabPath } from '../patientTabs'
 import type { PatientRow } from '../services/patientsApi'
@@ -84,72 +83,60 @@ export function PatientListPage() {
   }
 
   return (
-    <Box>
-      <PageBreadcrumbs
-        items={[
+    <div>
+      <PageHeader
+        breadcrumbs={[
           { label: 'Painel', to: '/' },
           { label: 'Pacientes' },
         ]}
+        title="Pacientes"
+        actions={
+          <Button asChild>
+            <Link to="/patients/new">
+              <Plus className="h-4 w-4" />
+              Novo paciente
+            </Link>
+          </Button>
+        }
       />
-      <Box
-        sx={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 2,
-          mb: 2,
-        }}
-      >
-        <Typography variant="h4" component="h2">
-          Pacientes
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          component={Link}
-          to="/patients/new"
-        >
-          Novo paciente
-        </Button>
-      </Box>
 
       <ApiConfigAlert />
-      <TextField
-        placeholder="Pesquisar por nome, email ou telefone…"
-        value={filter}
-        onChange={(e) => setFilter(e.target.value)}
-        size="small"
-        fullWidth
-        sx={{ mb: 2, maxWidth: { xs: 'none', sm: 480 } }}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon fontSize="small" color="action" />
-            </InputAdornment>
-          ),
-        }}
-      />
+
+      <div className="relative mb-4 max-w-[480px]">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="Pesquisar por nome, email ou telefone…"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          className="pl-9"
+        />
+      </div>
 
       {isLoading ? <ListPageSkeleton /> : null}
       {isError ? (
-        <Alert severity="error">{(error as Error).message}</Alert>
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>{(error as Error).message}</AlertDescription>
+        </Alert>
       ) : null}
       {data && data.length === 0 ? (
-        <Typography>Nenhum paciente registado.</Typography>
+        <EmptyState
+          title="Nenhum paciente registado"
+          action={
+            <Button asChild>
+              <Link to="/patients/new">
+                <Plus className="h-4 w-4" />
+                Novo paciente
+              </Link>
+            </Button>
+          }
+        />
       ) : null}
       {data && data.length > 0 ? (
-        <Box>
-          <Stack
-            direction="row"
-            flexWrap="wrap"
-            alignItems="center"
-            gap={1}
-            sx={{ mb: 2 }}
-          >
-            <Typography variant="body2" color="text.secondary" sx={{ width: { xs: '100%', sm: 'auto' } }}>
+        <div>
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <span className="w-full text-sm text-muted-foreground sm:w-auto">
               Ordenar por
-            </Typography>
+            </span>
             {(
               [
                 { key: 'full_name' as const, label: 'Nome' },
@@ -157,92 +144,109 @@ export function PatientListPage() {
                 { key: 'phone' as const, label: 'Telefone' },
               ] as const
             ).map(({ key, label }) => (
-              <Chip
+              <Badge
                 key={key}
-                size="small"
-                label={`${label}${orderBy === key ? (order === 'asc' ? ' ↑' : ' ↓') : ''}`}
+                variant={orderBy === key ? 'default' : 'outline'}
+                className={cn('cursor-pointer select-none')}
                 onClick={() => handleRequestSort(key)}
-                color={orderBy === key ? 'primary' : 'default'}
-                variant={orderBy === key ? 'filled' : 'outlined'}
-              />
+              >
+                {`${label}${orderBy === key ? (order === 'asc' ? ' ↑' : ' ↓') : ''}`}
+              </Badge>
             ))}
-          </Stack>
-          <Grid container spacing={2}>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {filteredSorted.map((p) => (
-              <Grid key={p.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-                <ListCard
-                  actions={
-                    <>
-                      <Tooltip title="Fichas de avaliação">
-                        <IconButton
-                          component={Link}
-                          to={patientTabPath(p.id, 'fichas')}
-                          size="small"
-                          color="primary"
-                          aria-label="Fichas de avaliação"
+              <ListCard
+                key={p.id}
+                actions={
+                  <>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          asChild
                         >
-                          <AssignmentOutlinedIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Evolução">
-                        <IconButton
-                          component={Link}
-                          to={patientTabPath(p.id, 'evolucao')}
-                          size="small"
-                          color="primary"
-                          aria-label="Evolução"
+                          <Link
+                            to={patientTabPath(p.id, 'fichas')}
+                            aria-label="Fichas de avaliação"
+                          >
+                            <ClipboardList className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Fichas de avaliação</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          asChild
                         >
-                          <TimelineOutlinedIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Editar paciente">
-                        <IconButton
-                          component={Link}
-                          to={`/patients/${p.id}/edit`}
-                          size="small"
-                          color="primary"
-                          aria-label="Editar paciente"
+                          <Link
+                            to={patientTabPath(p.id, 'evolucao')}
+                            aria-label="Evolução"
+                          >
+                            <LineChart className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Evolução</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          asChild
                         >
-                          <EditOutlinedIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Eliminar paciente">
-                        <IconButton
-                          size="small"
-                          color="error"
+                          <Link
+                            to={`/patients/${p.id}/edit`}
+                            aria-label="Editar paciente"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Editar paciente</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
                           aria-label="Eliminar paciente"
                           onClick={() => setDeleteId(p.id)}
                         >
-                          <DeleteOutlineIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </>
-                  }
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Eliminar paciente</TooltipContent>
+                    </Tooltip>
+                  </>
+                }
+              >
+                <Link
+                  to={`/patients/${p.id}`}
+                  className="font-semibold text-foreground no-underline hover:text-primary"
                 >
-                  <Typography
-                    variant="subtitle1"
-                    component={Link}
-                    to={`/patients/${p.id}`}
-                    sx={{
-                      fontWeight: 600,
-                      color: 'text.primary',
-                      textDecoration: 'none',
-                      '&:hover': { color: 'primary.main' },
-                    }}
-                  >
-                    {p.full_name}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    {p.email?.trim() || 'Sem email'}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {p.phone?.trim() || 'Sem telefone'}
-                  </Typography>
-                </ListCard>
-              </Grid>
+                  {p.full_name}
+                </Link>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {p.email?.trim() || 'Sem email'}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {p.phone?.trim() || 'Sem telefone'}
+                </p>
+              </ListCard>
             ))}
-          </Grid>
-        </Box>
+          </div>
+        </div>
       ) : null}
 
       <ConfirmDeleteDialog
@@ -258,6 +262,6 @@ export function PatientListPage() {
         onCancel={() => setDeleteId(null)}
         onConfirm={() => void confirmDelete()}
       />
-    </Box>
+    </div>
   )
 }

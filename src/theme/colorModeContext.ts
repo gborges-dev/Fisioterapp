@@ -1,8 +1,9 @@
-import type { PaletteMode } from '@mui/material'
 import { createContext } from 'react'
 
+import type { ColorMode } from './colorMode'
+
 export type ColorModeContextValue = {
-  mode: PaletteMode
+  mode: ColorMode
   toggleColorMode: () => void
 }
 

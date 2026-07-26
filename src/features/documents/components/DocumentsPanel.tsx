@@ -1,25 +1,18 @@
-import AttachFileIcon from '@mui/icons-material/AttachFile'
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
-import DownloadIcon from '@mui/icons-material/Download'
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Grid,
-  IconButton,
-  Link,
-  Stack,
-  Tooltip,
-  Typography,
-} from '@mui/material'
+import { Download, Loader2, Paperclip, Trash2 } from 'lucide-react'
 import { useRef, useState } from 'react'
 
-import { ConfirmDeleteDialog } from '../../../components/ConfirmDeleteDialog'
-import { ListCard } from '../../../components/ListCard'
-import { ListPageSkeleton } from '../../../components/ListPageSkeleton'
-import { ApiConfigAlert } from '../../../components/ApiConfigAlert'
-import { toastError, toastSuccess } from '../../../components/toast'
+import { ApiConfigAlert } from '@/components/ApiConfigAlert'
+import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog'
+import { ListCard } from '@/components/ListCard'
+import { ListPageSkeleton } from '@/components/ListPageSkeleton'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import { toastError, toastSuccess } from '@/components/toast'
 import {
   useDeleteDocument,
   usePatientDocuments,
@@ -80,91 +73,97 @@ export function DocumentsPanel({ patientId }: { patientId: string }) {
   }
 
   return (
-    <Box>
-      <Typography variant="h6" component="h3" gutterBottom>
-        Documentos
-      </Typography>
+    <div>
+      <h3 className="mb-4 text-lg font-semibold text-foreground">Documentos</h3>
       <ApiConfigAlert />
-      <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
+      <div className="mb-4 flex items-center gap-3">
         <input ref={inputRef} type="file" hidden onChange={onFileChange} />
-        <Button
-          variant="contained"
-          startIcon={<AttachFileIcon />}
-          onClick={onPickFile}
-          disabled={upload.isPending}
-        >
+        <Button onClick={onPickFile} disabled={upload.isPending}>
+          <Paperclip className="h-4 w-4" />
           Anexar ficheiro
         </Button>
-        {upload.isPending ? <CircularProgress size={24} /> : null}
-      </Stack>
+        {upload.isPending ? (
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        ) : null}
+      </div>
       {upload.error ? (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {(upload.error as Error).message}
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>{(upload.error as Error).message}</AlertDescription>
         </Alert>
       ) : null}
       {isLoading ? <ListPageSkeleton count={4} /> : null}
       {isError ? (
-        <Alert severity="error">{(error as Error).message}</Alert>
+        <Alert variant="destructive">
+          <AlertDescription>{(error as Error).message}</AlertDescription>
+        </Alert>
       ) : null}
       {data && data.length === 0 ? (
-        <Typography color="text.secondary">Nenhum documento.</Typography>
+        <p className="text-sm text-muted-foreground">Nenhum documento.</p>
       ) : null}
       {data && data.length > 0 ? (
-        <Grid container spacing={2}>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {data.map((doc) => (
-            <Grid key={doc.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-              <ListCard
-                actions={
-                  <>
-                    <Tooltip title="Transferir">
+            <ListCard
+              key={doc.id}
+              actions={
+                <>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
                       <span>
-                        <IconButton
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
                           aria-label={`Transferir ${doc.file_name}`}
                           onClick={() => void handleDownload(doc)}
                           disabled={downloadingId === doc.id || remove.isPending}
                         >
                           {downloadingId === doc.id ? (
-                            <CircularProgress size={22} />
+                            <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
-                            <DownloadIcon />
+                            <Download className="h-4 w-4" />
                           )}
-                        </IconButton>
+                        </Button>
                       </span>
-                    </Tooltip>
-                    <Tooltip title="Eliminar">
+                    </TooltipTrigger>
+                    <TooltipContent>Transferir</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
                       <span>
-                        <IconButton
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive"
                           aria-label={`Eliminar ${doc.file_name}`}
-                          color="error"
                           onClick={() => setDocToDelete(doc)}
                           disabled={remove.isPending || downloadingId === doc.id}
                         >
-                          <DeleteOutlineIcon />
-                        </IconButton>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </span>
-                    </Tooltip>
-                  </>
-                }
-              >
-                <Typography
-                  variant="subtitle2"
-                  sx={{ fontWeight: 600, wordBreak: 'break-word' }}
+                    </TooltipTrigger>
+                    <TooltipContent>Eliminar</TooltipContent>
+                  </Tooltip>
+                </>
+              }
+            >
+              <h4 className="break-words text-sm font-semibold text-foreground">
+                <a
+                  href={documentUrl(doc) || undefined}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-primary hover:underline"
                 >
-                  <Link
-                    href={documentUrl(doc) || undefined}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {doc.file_name}
-                  </Link>
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                  {new Date(doc.created_at).toLocaleString('pt-PT')}
-                </Typography>
-              </ListCard>
-            </Grid>
+                  {doc.file_name}
+                </a>
+              </h4>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {new Date(doc.created_at).toLocaleString('pt-PT')}
+              </p>
+            </ListCard>
           ))}
-        </Grid>
+        </div>
       ) : null}
 
       <ConfirmDeleteDialog
@@ -180,6 +179,6 @@ export function DocumentsPanel({ patientId }: { patientId: string }) {
         onCancel={() => setDocToDelete(null)}
         onConfirm={() => void confirmDelete()}
       />
-    </Box>
+    </div>
   )
 }

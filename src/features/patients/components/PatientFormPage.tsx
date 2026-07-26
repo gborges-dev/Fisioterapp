@@ -1,29 +1,29 @@
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  FormControl,
-  Grid,
-  InputLabel,
-  MenuItem,
-  Select,
-  Stack,
-  TextField,
-  Typography,
-  type SelectChangeEvent,
-} from '@mui/material'
+import { AlertTriangle, Loader2, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
-import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
-import { ApiConfigAlert } from '../../../components/ApiConfigAlert'
-import { useToast } from '../../../components/toast'
+import { PageHeader } from '@/components/AppShell'
+import { ApiConfigAlert } from '@/components/ApiConfigAlert'
+import { useToast } from '@/components/toast'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
 import { useSavePatient } from '../hooks/usePatientFicha'
 import { usePatient } from '../hooks/usePatients'
 import type { PatientRow } from '../services/patientsApi'
 import { calculateAge } from '../utils/age'
 import { isOptionalBirthDateValid } from '../utils/patientStepValidation'
+
+const SEX_NONE = '__none__'
 
 export function PatientFormPage() {
   const { id } = useParams<{ id: string }>()
@@ -33,13 +33,29 @@ export function PatientFormPage() {
   )
 
   if (isEdit && isLoading) {
-    return <CircularProgress aria-label="A carregar paciente" />
+    return (
+      <div
+        className="flex justify-center py-12"
+        aria-label="A carregar paciente"
+      >
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
   }
   if (isEdit && isError) {
-    return <Alert severity="error">{(error as Error).message}</Alert>
+    return (
+      <Alert variant="destructive">
+        <AlertDescription>{(error as Error).message}</AlertDescription>
+      </Alert>
+    )
   }
   if (isEdit && !existing) {
-    return <Alert severity="warning">Paciente não encontrado.</Alert>
+    return (
+      <Alert variant="warning">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertDescription>Paciente não encontrado.</AlertDescription>
+      </Alert>
+    )
   }
 
   return (
@@ -138,159 +154,158 @@ function PatientFormFields({
       : [{ label: 'Novo paciente' }]
 
   return (
-    <Box>
-      <PageBreadcrumbs
-        items={[
+    <div>
+      <PageHeader
+        breadcrumbs={[
           { label: 'Painel', to: '/' },
           { label: 'Pacientes', to: '/patients' },
           ...crumbPatient,
         ]}
+        title={isEdit ? 'Editar paciente' : 'Novo paciente'}
       />
-      <Typography variant="h4" component="h2" gutterBottom>
-        {isEdit ? 'Editar paciente' : 'Novo paciente'}
-      </Typography>
+
       <ApiConfigAlert />
+
       {err ? (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {(err as Error).message}
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>{(err as Error).message}</AlertDescription>
         </Alert>
       ) : null}
       {formError ? (
-        <Alert severity="warning" sx={{ mb: 2 }} onClose={() => setFormError(null)}>
-          {formError}
+        <Alert variant="warning" className="mb-4">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between gap-2">
+            <span>{formError}</span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 shrink-0"
+              onClick={() => setFormError(null)}
+              aria-label="Fechar aviso"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </AlertDescription>
         </Alert>
       ) : null}
 
-      <Box
-        component="form"
+      <form
         onSubmit={(e) => void handleSubmit(e)}
         noValidate
-        sx={{ maxWidth: { xs: '100%', sm: 720 } }}
+        className="max-w-[720px]"
       >
-        <Grid container spacing={2}>
-          <Grid size={{ xs: 12 }}>
-            <TextField
-              label="Nome completo"
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="fullName">Nome completo</Label>
+            <Input
+              id="fullName"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               required
-              fullWidth
             />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              label="Data de nascimento"
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="birthDate">Data de nascimento</Label>
+            <Input
+              id="birthDate"
               type="date"
               value={birthDate}
               onChange={(e) => setBirthDate(e.target.value)}
-              fullWidth
-              slotProps={{ inputLabel: { shrink: true } }}
             />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              label="Idade"
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="age">Idade</Label>
+            <Input
+              id="age"
               value={ageLabel != null ? String(ageLabel) : '—'}
-              slotProps={{ input: { readOnly: true } }}
-              fullWidth
+              readOnly
             />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <FormControl fullWidth>
-              <InputLabel id="sex-label">Sexo</InputLabel>
-              <Select
-                labelId="sex-label"
-                label="Sexo"
-                value={sex}
-                onChange={(e: SelectChangeEvent) => setSex(e.target.value)}
-              >
-                <MenuItem value="">
-                  <em>Não indicado</em>
-                </MenuItem>
-                <MenuItem value="F">Feminino</MenuItem>
-                <MenuItem value="M">Masculino</MenuItem>
-                <MenuItem value="O">Outro</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              label="CPF"
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="sex">Sexo</Label>
+            <Select
+              value={sex || SEX_NONE}
+              onValueChange={(v) => setSex(v === SEX_NONE ? '' : v)}
+            >
+              <SelectTrigger id="sex">
+                <SelectValue placeholder="Sexo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={SEX_NONE}>Não indicado</SelectItem>
+                <SelectItem value="F">Feminino</SelectItem>
+                <SelectItem value="M">Masculino</SelectItem>
+                <SelectItem value="O">Outro</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="cpf">CPF</Label>
+            <Input
+              id="cpf"
               value={cpf}
               onChange={(e) => setCpf(e.target.value)}
-              fullWidth
             />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              label="Telefone"
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="phone">Telefone</Label>
+            <Input
+              id="phone"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              fullWidth
             />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              label="E-mail"
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="email">E-mail</Label>
+            <Input
+              id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              fullWidth
             />
-          </Grid>
-          <Grid size={{ xs: 12 }}>
-            <TextField
-              label="Endereço"
+          </div>
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="address">Endereço</Label>
+            <Textarea
+              id="address"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              fullWidth
-              multiline
-              minRows={2}
+              rows={2}
             />
-          </Grid>
-          <Grid size={{ xs: 12 }}>
-            <TextField
-              label="Motivo da consulta"
+          </div>
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="consultationReason">Motivo da consulta</Label>
+            <Textarea
+              id="consultationReason"
               value={consultationReason}
               onChange={(e) => setConsultationReason(e.target.value)}
-              fullWidth
-              multiline
-              minRows={3}
+              rows={3}
             />
-          </Grid>
-          <Grid size={{ xs: 12 }}>
-            <TextField
-              label="Notas"
+          </div>
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="notes">Notas</Label>
+            <Textarea
+              id="notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              fullWidth
-              multiline
-              minRows={2}
+              rows={2}
             />
-          </Grid>
-        </Grid>
+          </div>
+        </div>
 
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={2}
-          sx={{ mt: 3 }}
-          justifyContent="flex-end"
-        >
-          <Button
-            component={Link}
-            to={isEdit && patientId ? `/patients/${patientId}` : '/patients'}
-          >
-            Cancelar
+        <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button variant="outline" asChild>
+            <Link
+              to={isEdit && patientId ? `/patients/${patientId}` : '/patients'}
+            >
+              Cancelar
+            </Link>
           </Button>
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={save.isPending || !fullName.trim()}
-          >
+          <Button type="submit" disabled={save.isPending || !fullName.trim()}>
             Guardar paciente
           </Button>
-        </Stack>
-      </Box>
-    </Box>
+        </div>
+      </form>
+    </div>
   )
 }

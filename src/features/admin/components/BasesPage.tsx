@@ -1,27 +1,14 @@
-import {
-  Alert,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Grid,
-  Skeleton,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TextField,
-  Typography,
-} from '@mui/material'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { PageBreadcrumbs } from '../../../components/PageBreadcrumbs'
-import { toastSuccess } from '../../../components/toast'
+import { GlassPanel, PageHeader } from '@/components/AppShell'
+import { toastSuccess } from '@/components/toast'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useAuth } from '../../auth/AuthContext'
 import { createWorkspace, listWorkspaces } from '../services/adminApi'
 
@@ -93,139 +80,131 @@ export function BasesPage() {
     therapistPassword
 
   return (
-    <Box>
-      <PageBreadcrumbs items={[{ label: 'Bases' }]} />
-
-      <Typography variant="h4" component="h1" sx={{ mb: 3 }}>
-        Bases
-      </Typography>
+    <div>
+      <PageHeader breadcrumbs={[{ label: 'Bases' }]} title="Bases" />
 
       {isError ? (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {(error as Error).message}
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>{(error as Error).message}</AlertDescription>
         </Alert>
       ) : null}
 
-      <Grid container spacing={3}>
-        <Grid size={{ xs: 12, lg: 7 }}>
-          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
-            Bases existentes
-          </Typography>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <div className="lg:col-span-7">
+          <h2 className="mb-4 text-base font-semibold text-foreground">Bases existentes</h2>
 
-          <TableContainer component={Card} variant="outlined">
-            <Table size="medium">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Nome</TableCell>
-                  <TableCell>Terapeuta</TableCell>
-                  <TableCell>E-mail</TableCell>
-                  <TableCell align="right">Ação</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
+          <GlassPanel className="overflow-x-auto p-0">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border/60 text-left text-muted-foreground">
+                  <th className="px-4 py-3 font-medium">Nome</th>
+                  <th className="px-4 py-3 font-medium">Terapeuta</th>
+                  <th className="px-4 py-3 font-medium">E-mail</th>
+                  <th className="px-4 py-3 text-right font-medium">Ação</th>
+                </tr>
+              </thead>
+              <tbody>
                 {isLoading
                   ? Array.from({ length: 4 }, (_, i) => (
-                      <TableRow key={i}>
+                      <tr key={i} className="border-b border-border/40">
                         {Array.from({ length: 4 }, (_, j) => (
-                          <TableCell key={j}>
-                            <Skeleton />
-                          </TableCell>
+                          <td key={j} className="px-4 py-3">
+                            <Skeleton className="h-5 w-full" />
+                          </td>
                         ))}
-                      </TableRow>
+                      </tr>
                     ))
                   : null}
                 {!isLoading && data?.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={4}>
-                      <Typography color="text.secondary">
-                        Nenhuma base registada.
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
+                  <tr>
+                    <td colSpan={4} className="px-4 py-6 text-muted-foreground">
+                      Nenhuma base registada.
+                    </td>
+                  </tr>
                 ) : null}
                 {!isLoading && data && data.length > 0
                   ? data.map((ws) => (
-                      <TableRow key={ws.id} hover>
-                        <TableCell>{ws.name}</TableCell>
-                        <TableCell>{ws.owner_name ?? '—'}</TableCell>
-                        <TableCell>{ws.owner_email ?? '—'}</TableCell>
-                        <TableCell align="right">
-                          <Button
-                            variant="contained"
-                            size="small"
-                            onClick={() => handleEnter(ws.id)}
-                          >
+                      <tr
+                        key={ws.id}
+                        className="border-b border-border/40 last:border-0 hover:bg-accent/30"
+                      >
+                        <td className="px-4 py-3">{ws.name}</td>
+                        <td className="px-4 py-3">{ws.owner_name ?? '—'}</td>
+                        <td className="px-4 py-3">{ws.owner_email ?? '—'}</td>
+                        <td className="px-4 py-3 text-right">
+                          <Button size="sm" onClick={() => handleEnter(ws.id)}>
                             Entrar
                           </Button>
-                        </TableCell>
-                      </TableRow>
+                        </td>
+                      </tr>
                     ))
                   : null}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Grid>
+              </tbody>
+            </table>
+          </GlassPanel>
+        </div>
 
-        <Grid size={{ xs: 12, lg: 5 }}>
-          <Card variant="outlined">
-            <CardContent>
-              <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
-                Criar base
-              </Typography>
+        <div className="lg:col-span-5">
+          <GlassPanel>
+            <h2 className="mb-4 text-base font-semibold text-foreground">Criar base</h2>
 
-              {createError ? (
-                <Alert severity="error" sx={{ mb: 2 }}>
-                  {createError}
-                </Alert>
-              ) : null}
+            {createError ? (
+              <Alert variant="destructive" className="mb-4">
+                <AlertDescription>{createError}</AlertDescription>
+              </Alert>
+            ) : null}
 
-              <Box component="form" onSubmit={handleCreate}>
-                <Stack spacing={2}>
-                  <TextField
-                    label="Nome da base"
-                    value={workspaceName}
-                    onChange={(e) => setWorkspaceName(e.target.value)}
-                    required
-                    fullWidth
-                  />
-                  <TextField
-                    label="Nome do terapeuta"
-                    value={therapistName}
-                    onChange={(e) => setTherapistName(e.target.value)}
-                    required
-                    fullWidth
-                  />
-                  <TextField
-                    label="E-mail do terapeuta"
-                    type="email"
-                    value={therapistEmail}
-                    onChange={(e) => setTherapistEmail(e.target.value)}
-                    required
-                    fullWidth
-                  />
-                  <TextField
-                    label="Senha do terapeuta"
-                    type="password"
-                    value={therapistPassword}
-                    onChange={(e) => setTherapistPassword(e.target.value)}
-                    required
-                    fullWidth
-                    autoComplete="new-password"
-                  />
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    disabled={!canSubmit || create.isPending}
-                    fullWidth
-                  >
-                    {create.isPending ? 'A criar…' : 'Criar base'}
-                  </Button>
-                </Stack>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-    </Box>
+            <form onSubmit={handleCreate} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="workspace-name">Nome da base</Label>
+                <Input
+                  id="workspace-name"
+                  value={workspaceName}
+                  onChange={(e) => setWorkspaceName(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="therapist-name">Nome do terapeuta</Label>
+                <Input
+                  id="therapist-name"
+                  value={therapistName}
+                  onChange={(e) => setTherapistName(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="therapist-email">E-mail do terapeuta</Label>
+                <Input
+                  id="therapist-email"
+                  type="email"
+                  value={therapistEmail}
+                  onChange={(e) => setTherapistEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="therapist-password">Senha do terapeuta</Label>
+                <Input
+                  id="therapist-password"
+                  type="password"
+                  value={therapistPassword}
+                  onChange={(e) => setTherapistPassword(e.target.value)}
+                  required
+                  autoComplete="new-password"
+                />
+              </div>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={!canSubmit || create.isPending}
+              >
+                {create.isPending ? 'A criar…' : 'Criar base'}
+              </Button>
+            </form>
+          </GlassPanel>
+        </div>
+      </div>
+    </div>
   )
 }

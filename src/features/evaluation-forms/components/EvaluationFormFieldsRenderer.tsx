@@ -1,12 +1,22 @@
-import { Checkbox, FormControl, FormControlLabel, FormGroup, FormLabel, MenuItem, Stack, TextField, Typography } from '@mui/material'
 import type { ReactNode } from 'react'
 
+import { Checkbox } from '@/components/ui/checkbox'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
 import {
   formatMultiselectDisplay,
   parseMultiselectAnswer,
   serializeMultiselectAnswer,
-} from '../../../lib/formAnswers'
-import type { FormFieldSchema } from '../../../types/database.types'
+} from '@/lib/formAnswers'
+import type { FormFieldSchema } from '@/types/database.types'
 
 export function EvaluationFormFieldsRenderer({
   fields,
@@ -24,54 +34,64 @@ export function EvaluationFormFieldsRenderer({
   }
 
   return (
-    <Stack spacing={2}>
+    <div className="space-y-4">
       {fields.map((field) => {
         const value = answers[field.id] ?? ''
-        const common = {
-          label: field.label,
-          value,
-          required: field.required,
-          fullWidth: true,
-          slotProps: readOnly ? { input: { readOnly: true } } : undefined,
-        }
 
         if (field.type === 'textarea') {
           return (
-            <TextField
-              key={field.id}
-              {...common}
-              multiline
-              minRows={3}
-              onChange={
-                readOnly
-                  ? undefined
-                  : (e) => onChange?.(field.id, e.target.value)
-              }
-            />
+            <div key={field.id} className="space-y-2">
+              <Label htmlFor={field.id}>
+                {field.label}
+                {field.required ? ' *' : ''}
+              </Label>
+              <Textarea
+                id={field.id}
+                value={value}
+                required={field.required}
+                readOnly={readOnly}
+                rows={3}
+                onChange={
+                  readOnly
+                    ? undefined
+                    : (e) => onChange?.(field.id, e.target.value)
+                }
+              />
+            </div>
           )
         }
 
         if (field.type === 'select') {
+          if (readOnly) {
+            return (
+              <FieldBox key={field.id} label={field.label} required={field.required}>
+                <p className="text-sm text-muted-foreground">{value || '—'}</p>
+              </FieldBox>
+            )
+          }
           return (
-            <TextField
-              key={field.id}
-              {...common}
-              select
-              onChange={
-                readOnly
-                  ? undefined
-                  : (e) => onChange?.(field.id, e.target.value)
-              }
-            >
-              <MenuItem value="">
-                <em>Selecionar…</em>
-              </MenuItem>
-              {(field.options ?? []).map((opt) => (
-                <MenuItem key={opt} value={opt}>
-                  {opt}
-                </MenuItem>
-              ))}
-            </TextField>
+            <div key={field.id} className="space-y-2">
+              <Label htmlFor={field.id}>
+                {field.label}
+                {field.required ? ' *' : ''}
+              </Label>
+              <Select
+                value={value || undefined}
+                onValueChange={(v) => onChange?.(field.id, v)}
+                required={field.required}
+              >
+                <SelectTrigger id={field.id}>
+                  <SelectValue placeholder="Selecionar…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(field.options ?? []).map((opt) => (
+                    <SelectItem key={opt} value={opt}>
+                      {opt}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           )
         }
 
@@ -80,66 +100,76 @@ export function EvaluationFormFieldsRenderer({
 
           if (readOnly) {
             return (
-              <BoxField key={field.id} label={field.label} required={field.required}>
-                <Typography variant="body2" color="text.secondary">
+              <FieldBox key={field.id} label={field.label} required={field.required}>
+                <p className="text-sm text-muted-foreground">
                   {formatMultiselectDisplay(value) || '—'}
-                </Typography>
-              </BoxField>
+                </p>
+              </FieldBox>
             )
           }
 
           return (
-            <FormControl key={field.id} required={field.required} fullWidth>
-              <FormLabel>{field.label}</FormLabel>
-              <FormGroup>
+            <div key={field.id} className="space-y-2">
+              <Label>
+                {field.label}
+                {field.required ? ' *' : ''}
+              </Label>
+              <div className="space-y-2">
                 {(field.options ?? []).map((opt) => (
-                  <FormControlLabel
-                    key={opt}
-                    control={
-                      <Checkbox
-                        checked={selected.includes(opt)}
-                        onChange={(e) => {
-                          const next = e.target.checked
-                            ? [...selected, opt]
-                            : selected.filter((s) => s !== opt)
-                          onChange?.(field.id, serializeMultiselectAnswer(next))
-                        }}
-                      />
-                    }
-                    label={opt}
-                  />
+                  <div key={opt} className="flex items-center gap-2">
+                    <Checkbox
+                      id={`${field.id}-${opt}`}
+                      checked={selected.includes(opt)}
+                      onCheckedChange={(checked) => {
+                        const next = checked
+                          ? [...selected, opt]
+                          : selected.filter((s) => s !== opt)
+                        onChange?.(field.id, serializeMultiselectAnswer(next))
+                      }}
+                    />
+                    <Label
+                      htmlFor={`${field.id}-${opt}`}
+                      className="cursor-pointer font-normal"
+                    >
+                      {opt}
+                    </Label>
+                  </div>
                 ))}
-              </FormGroup>
-            </FormControl>
+              </div>
+            </div>
           )
         }
 
         return (
-          <TextField
-            key={field.id}
-            {...common}
-            type={
-              field.type === 'number'
-                ? 'number'
-                : field.type === 'date'
-                  ? 'date'
-                  : 'text'
-            }
-            slotProps={{
-              ...common.slotProps,
-              inputLabel: field.type === 'date' ? { shrink: true } : undefined,
-            }}
-            onChange={
-              readOnly ? undefined : (e) => onChange?.(field.id, e.target.value)
-            }
-          />
+          <div key={field.id} className="space-y-2">
+            <Label htmlFor={field.id}>
+              {field.label}
+              {field.required ? ' *' : ''}
+            </Label>
+            <Input
+              id={field.id}
+              type={
+                field.type === 'number'
+                  ? 'number'
+                  : field.type === 'date'
+                    ? 'date'
+                    : 'text'
+              }
+              value={value}
+              required={field.required}
+              readOnly={readOnly}
+              onChange={
+                readOnly ? undefined : (e) => onChange?.(field.id, e.target.value)
+              }
+            />
+          </div>
         )
       })}
-    </Stack>
+    </div>
   )
 }
 
-function BoxField({
+function FieldBox({
   label,
   required,
   children,
@@ -149,9 +179,12 @@ function BoxField({
   children: ReactNode
 }) {
   return (
-    <FormControl fullWidth required={required}>
-      <FormLabel sx={{ mb: 0.5 }}>{label}</FormLabel>
+    <div className="space-y-1">
+      <Label>
+        {label}
+        {required ? ' *' : ''}
+      </Label>
       {children}
-    </FormControl>
+    </div>
   )
 }

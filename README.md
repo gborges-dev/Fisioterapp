@@ -31,6 +31,23 @@ Opcional: `VITE_DEFAULT_WORKSPACE_ID` alinhado ao workspace seed (`00000000-0000
 
 Formulários públicos: rota `/f/:token` (sem login).
 
+## Produção
+
+Front na **Vercel**, API na **Render**, Supabase **PROD**. Guia completo:
+
+→ **[../Fisioterapp-api/docs/PRODUCTION_SETUP.md](../Fisioterapp-api/docs/PRODUCTION_SETUP.md)**
+
+Resumo das env vars na Vercel (Production):
+
+| Variável | Valor |
+|----------|--------|
+| `VITE_API_URL` | `https://SUA-API.onrender.com/api` *(obrigatório terminar em `/api`)* |
+| `VITE_DEFAULT_WORKSPACE_ID` | `00000000-0000-0000-0000-000000000001` |
+
+Após alterar env vars: **Redeploy** na Vercel.
+
+API (setup local e endpoints): **[../Fisioterapp-api/README.md](../Fisioterapp-api/README.md)**
+
 ## Ambiente DEV e CI/CD
 
 Checklist completo (Supabase DEV, branch `dev`, secrets GitHub, workflows):

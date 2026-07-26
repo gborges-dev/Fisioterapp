@@ -1,11 +1,11 @@
-import type { PaletteMode } from '@mui/material'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { ColorModeContext } from './colorModeContext'
+import type { ColorMode } from './colorMode'
 
 const STORAGE_KEY = 'fisioterapp-color-mode'
 
-function readStoredMode(): PaletteMode | null {
+function readStoredMode(): ColorMode | null {
   try {
     const v = localStorage.getItem(STORAGE_KEY)
     if (v === 'light' || v === 'dark') return v
@@ -15,7 +15,7 @@ function readStoredMode(): PaletteMode | null {
   return null
 }
 
-function getInitialMode(): PaletteMode {
+function getInitialMode(): ColorMode {
   const stored = readStoredMode()
   if (stored) return stored
   if (
@@ -33,19 +33,23 @@ function getInitialMode(): PaletteMode {
   return 'light'
 }
 
+function applyMode(mode: ColorMode) {
+  const root = document.documentElement
+  root.classList.toggle('dark', mode === 'dark')
+  root.style.colorScheme = mode
+}
+
 export function ColorModeProvider({ children }: { children: React.ReactNode }) {
-  const [mode, setMode] = useState<PaletteMode>(() => {
+  const [mode, setMode] = useState<ColorMode>(() => {
     const m = getInitialMode()
     if (typeof document !== 'undefined') {
-      document.documentElement.dataset.theme = m
-      document.documentElement.style.colorScheme = m
+      applyMode(m)
     }
     return m
   })
 
   useEffect(() => {
-    document.documentElement.dataset.theme = mode
-    document.documentElement.style.colorScheme = mode
+    applyMode(mode)
     try {
       localStorage.setItem(STORAGE_KEY, mode)
     } catch {
