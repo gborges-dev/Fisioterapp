@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { ApiConfigAlert } from '@/components/ApiConfigAlert'
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog'
 import { ListPageSkeleton } from '@/components/ListPageSkeleton'
+import { QueryErrorState } from '@/components/QueryErrorState'
 import { RichTextEditor } from '@/components/RichTextEditor'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -17,6 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { isRichTextEmpty } from '@/lib/richText'
+import { getFriendlyErrorMessage } from '@/lib/apiError'
 import { usePatientEvaluationForms } from '../../evaluation-forms/hooks/usePatientEvaluationForms'
 import {
   useCreateEvolution,
@@ -48,7 +50,7 @@ function rowToForm(row: EvolutionRow) {
 
 export function EvolutionPanel({ patientId }: { patientId: string }) {
   const { data, isLoading, isError, error } = useEvolutionEntries(patientId)
-  const { data: evaluationForms, isLoading: loadingForms } =
+  const { data: evaluationForms, isLoading: loadingForms, isError: formsError, error: formsLoadError } =
     usePatientEvaluationForms(patientId)
   const create = useCreateEvolution(patientId)
   const update = useUpdateEvolutionEntry(patientId)
@@ -103,8 +105,11 @@ export function EvolutionPanel({ patientId }: { patientId: string }) {
         resetForm()
         setExpandedId(savedId)
       } else {
-        await create.mutateAsync(payload)
+        const created = await create.mutateAsync(payload)
         resetForm()
+        if (created?.id) {
+          setExpandedId(created.id)
+        }
       }
     } catch {
       /* erro na mutation */
@@ -144,7 +149,13 @@ export function EvolutionPanel({ patientId }: { patientId: string }) {
       {loadingForms ? (
         <ListPageSkeleton count={1} cardHeight={48} />
       ) : null}
-      {!loadingForms && evaluationForms && evaluationForms.length === 0 ? (
+      {formsError ? (
+        <QueryErrorState
+          error={formsLoadError}
+          title="Não foi possível carregar as fichas"
+        />
+      ) : null}
+      {!loadingForms && !formsError && evaluationForms && evaluationForms.length === 0 ? (
         <Alert variant="warning" className="mb-4">
           <AlertDescription>
             É necessário adicionar uma ficha de avaliação antes de registar evolução.{' '}
@@ -201,7 +212,9 @@ export function EvolutionPanel({ patientId }: { patientId: string }) {
               />
               {mutationError ? (
                 <Alert variant="destructive">
-                  <AlertDescription>{(mutationError as Error).message}</AlertDescription>
+                  <AlertDescription>
+                    {getFriendlyErrorMessage(mutationError)}
+                  </AlertDescription>
                 </Alert>
               ) : null}
               <div className="flex flex-col gap-2 sm:flex-row">

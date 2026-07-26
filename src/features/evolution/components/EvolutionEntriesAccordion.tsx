@@ -1,7 +1,7 @@
 import { Pencil, Trash2 } from 'lucide-react'
 
+import { QueryErrorState } from '@/components/QueryErrorState'
 import { RichTextContent } from '@/components/RichTextContent'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -69,9 +69,11 @@ export function EvolutionEntriesAccordion({
 
   if (isError) {
     return (
-      <Alert variant="destructive">
-        <AlertDescription>{error?.message ?? 'Erro ao carregar registos.'}</AlertDescription>
-      </Alert>
+      <QueryErrorState
+        error={error}
+        title="Não foi possível carregar o histórico"
+        description={undefined}
+      />
     )
   }
 

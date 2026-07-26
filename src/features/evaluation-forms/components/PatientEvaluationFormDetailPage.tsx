@@ -1,15 +1,19 @@
 import { Loader2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 
 import { PageHeader } from '@/components/AppShell'
 import { ApiConfigAlert } from '@/components/ApiConfigAlert'
+import { QueryErrorState } from '@/components/QueryErrorState'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/components/toast'
+import { getFriendlyErrorMessage } from '@/lib/apiError'
 import { validateRequiredFields } from '@/lib/formFieldValidation'
+import { queryKeys } from '@/lib/queryKeys'
 import type { FormFieldSchema } from '@/types/database.types'
 import { usePatient } from '../../patients/hooks/usePatients'
 import { patientTabPath } from '../../patients/patientTabs'
@@ -67,9 +71,14 @@ export function PatientEvaluationFormDetailPage() {
   }
   if (isError) {
     return (
-      <Alert variant="destructive">
-        <AlertDescription>{(error as Error).message}</AlertDescription>
-      </Alert>
+      <QueryErrorState
+        error={error}
+        title="Não foi possível abrir a ficha"
+        backTo={{
+          label: 'Voltar às fichas',
+          href: `/patients/${patientId}?tab=fichas`,
+        }}
+      />
     )
   }
   if (!form) {
@@ -101,6 +110,7 @@ function PatientEvaluationFormEditor({
 }) {
   const update = useUpdatePatientEvaluationForm(patientId)
   const navigate = useNavigate()
+  const qc = useQueryClient()
   const { showSuccess, showError } = useToast()
 
   const fields = useMemo(() => parseEvaluationSchema(form.schema), [form.schema])
@@ -129,7 +139,10 @@ function PatientEvaluationFormEditor({
         evaluationDate,
       })
       showSuccess('Ficha atualizada.')
-      void navigate(patientTabPath(patientId, 'evolucao'))
+      await qc.refetchQueries({
+        queryKey: queryKeys.evaluationForms.byPatient(patientId),
+      })
+      void navigate(patientTabPath(patientId, 'evolucao'), { replace: true })
     } catch (err) {
       showError(err instanceof Error ? err : new Error(String(err)))
     }
@@ -185,7 +198,9 @@ function PatientEvaluationFormEditor({
         />
         {update.error ? (
           <Alert variant="destructive">
-            <AlertDescription>{(update.error as Error).message}</AlertDescription>
+            <AlertDescription>
+              {getFriendlyErrorMessage(update.error)}
+            </AlertDescription>
           </Alert>
         ) : null}
         <div className="flex flex-wrap justify-end gap-2">

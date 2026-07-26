@@ -3,7 +3,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom'
 
 import { GlassPanel, PageHeader } from '@/components/AppShell'
 import { ApiConfigAlert } from '@/components/ApiConfigAlert'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { QueryErrorState } from '@/components/QueryErrorState'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { DocumentsPanel } from '../../documents/components/DocumentsPanel'
@@ -85,7 +85,7 @@ function PatientDadosPanel({
 export function PatientDetailPage() {
   const { id } = useParams<{ id: string }>()
   const [searchParams, setSearchParams] = useSearchParams()
-  const { data, isLoading, isError, error } = usePatient(id)
+  const { data, isLoading, isError, error, refetch } = usePatient(id)
   const activeTab = parsePatientTab(searchParams)
 
   const handleTabChange = (value: PatientTab) => {
@@ -121,9 +121,12 @@ export function PatientDetailPage() {
         </div>
       ) : null}
       {isError ? (
-        <Alert variant="destructive" className="mb-4">
-          <AlertDescription>{(error as Error).message}</AlertDescription>
-        </Alert>
+        <QueryErrorState
+          error={error}
+          title="Não foi possível abrir o paciente"
+          onRetry={() => void refetch()}
+          backTo={{ label: 'Voltar à lista', href: '/patients' }}
+        />
       ) : null}
       {data ? (
         <Tabs

@@ -1,6 +1,7 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Route, Routes } from 'react-router-dom'
 
 import { AppShell } from '../components/AppShell'
+import { NotFoundPage } from '../components/NotFoundPage'
 import { BasesPage } from '../features/admin/components/BasesPage'
 import { LoginPage } from '../features/auth/components/LoginPage'
 import { ProtectedRoute } from '../features/auth/components/ProtectedRoute'
@@ -40,6 +41,7 @@ export function AppRoutes() {
             <Route path=":id/comparar" element={<PatientComparePage />} />
             <Route path=":id/edit" element={<PatientFormPage />} />
             <Route path=":id/evolution" element={<EvolutionPage />} />
+            <Route path=":id/evolucao" element={<EvolutionPage />} />
             <Route path=":id/documents" element={<DocumentsPage />} />
             <Route path=":id/evaluation-forms">
               <Route index element={<PatientEvaluationFormsPage />} />
@@ -60,7 +62,7 @@ export function AppRoutes() {
           </Route>
           <Route path="finance" element={<FinancePage />} />
           <Route path="reports" element={<ReportsPage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Route>
     </Routes>

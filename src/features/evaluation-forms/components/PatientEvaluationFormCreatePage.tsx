@@ -1,6 +1,7 @@
 import { Loader2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 
 import { PageHeader } from '@/components/AppShell'
 import { ApiConfigAlert } from '@/components/ApiConfigAlert'
@@ -16,7 +17,9 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useToast } from '@/components/toast'
+import { getFriendlyErrorMessage } from '@/lib/apiError'
 import { validateRequiredFields } from '@/lib/formFieldValidation'
+import { queryKeys } from '@/lib/queryKeys'
 import type { FormFieldSchema } from '@/types/database.types'
 import { usePatient } from '../../patients/hooks/usePatients'
 import { patientTabPath } from '../../patients/patientTabs'
@@ -31,6 +34,7 @@ export function PatientEvaluationFormCreatePage() {
   const { data: templates, isLoading: loadingTemplates } = useEvaluationFormTemplates()
   const create = useCreatePatientEvaluationForm(patientId ?? '')
   const navigate = useNavigate()
+  const qc = useQueryClient()
   const { showSuccess, showError } = useToast()
 
   const [templateId, setTemplateId] = useState('')
@@ -81,7 +85,10 @@ export function PatientEvaluationFormCreatePage() {
         evaluationDate,
       })
       showSuccess('Ficha adicionada com sucesso.')
-      void navigate(patientTabPath(patientId, 'evolucao'))
+      await qc.refetchQueries({
+        queryKey: queryKeys.evaluationForms.byPatient(patientId),
+      })
+      void navigate(patientTabPath(patientId, 'evolucao'), { replace: true })
     } catch (err) {
       showError(err instanceof Error ? err : new Error(String(err)))
     }
@@ -186,7 +193,9 @@ export function PatientEvaluationFormCreatePage() {
 
         {create.error ? (
           <Alert variant="destructive">
-            <AlertDescription>{(create.error as Error).message}</AlertDescription>
+            <AlertDescription>
+              {getFriendlyErrorMessage(create.error)}
+            </AlertDescription>
           </Alert>
         ) : null}
 

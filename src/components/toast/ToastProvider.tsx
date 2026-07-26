@@ -1,13 +1,16 @@
 import { useLayoutEffect, useMemo, type ReactNode } from 'react'
 import { toast } from 'sonner'
 
+import { getFriendlyErrorMessage } from '@/lib/apiError'
+
 import { ToastContext } from './toastContext'
 import { registerToastHandlers } from './toastBridge'
 
 function normalizeError(message: string | Error): string {
-  if (typeof message === 'string') return message
-  const m = message?.message?.trim()
-  return m && m.length > 0 ? m : 'Ocorreu um erro.'
+  if (typeof message === 'string') {
+    return getFriendlyErrorMessage(new Error(message))
+  }
+  return getFriendlyErrorMessage(message)
 }
 
 export function ToastProvider({ children }: { children: ReactNode }) {

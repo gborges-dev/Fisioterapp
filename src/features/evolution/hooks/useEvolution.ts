@@ -9,6 +9,7 @@ import {
   deleteEvolutionEntry,
   listEvolution,
   updateEvolutionEntry,
+  type EvolutionRow,
 } from '../services/evolutionApi'
 
 const LIST_STALE_MS = 30_000
@@ -55,11 +56,14 @@ export function useCreateEvolution(patientId: string) {
       if (error) throw error
       return data
     },
-    onSuccess: () => {
+    onSuccess: (newRow) => {
       toastSuccess('Evolução registada.')
-      void qc.invalidateQueries({
-        queryKey: queryKeys.evolution(patientId),
-      })
+      if (newRow) {
+        qc.setQueryData<EvolutionRow[]>(
+          queryKeys.evolution(patientId),
+          (prev) => [newRow, ...(prev ?? [])],
+        )
+      }
       void qc.invalidateQueries({
         queryKey: queryKeys.dashboard.evolutionOverview,
       })
