@@ -26,7 +26,14 @@ export default defineConfig([
       ],
       'react-refresh/only-export-components': [
         'error',
-        { allowExportNames: ['useAuth', 'formatEvolutionDate'] },
+        {
+          allowExportNames: [
+            'useAuth',
+            'formatEvolutionDate',
+            'badgeVariants',
+            'buttonVariants',
+          ],
+        },
       ],
     },
   },

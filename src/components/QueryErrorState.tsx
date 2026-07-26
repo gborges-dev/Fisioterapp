@@ -3,11 +3,7 @@ import type { ReactNode } from 'react'
 
 import { EmptyState } from '@/components/AppShell'
 import { Button } from '@/components/ui/button'
-import {
-  getApiErrorStatus,
-  getFriendlyErrorMessage,
-  isNotFoundError,
-} from '@/lib/apiError'
+import { getFriendlyErrorMessage, isNotFoundError } from '@/lib/apiError'
 
 type QueryErrorStateProps = {
   error: unknown
@@ -57,9 +53,4 @@ export function QueryErrorState({
       action={defaultAction}
     />
   )
-}
-
-/** Para logs ou telemetria — preserva detalhe técnico sem mostrar ao utilizador. */
-export function getQueryErrorStatus(error: unknown): number | null {
-  return getApiErrorStatus(error)
 }

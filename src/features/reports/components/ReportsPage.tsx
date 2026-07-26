@@ -120,7 +120,10 @@ export function ReportsPage() {
     patientId: cashPatient?.id ?? null,
     type: null,
   })
-  const cashFlowRows = cashFlowReport.data ?? []
+  const cashFlowRows = useMemo(
+    () => cashFlowReport.data ?? [],
+    [cashFlowReport.data],
+  )
   const cashFlowTotals = useMemo(
     () => summarizeCashFlow(cashFlowRows),
     [cashFlowRows],
