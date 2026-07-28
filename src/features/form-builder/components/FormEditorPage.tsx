@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import { GlassPanel, PageHeader } from '@/components/AppShell'
+import { FormFieldOptionsInput } from '@/components/FormFieldOptionsInput'
 import { ApiConfigAlert } from '@/components/ApiConfigAlert'
 import { useToast } from '@/components/toast'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -233,18 +234,12 @@ function FormEditorFields({
                 <Label htmlFor={`options-${field.id}`}>
                   Opções (separadas por vírgula)
                 </Label>
-                <Input
+                <FormFieldOptionsInput
+                  key={field.id}
                   id={`options-${field.id}`}
-                  value={(field.options ?? []).join(', ')}
-                  onChange={(e) =>
-                    updateField(index, {
-                      options: e.target.value
-                        .split(',')
-                        .map((s) => s.trim())
-                        .filter(Boolean),
-                    })
-                  }
+                  options={field.options}
                   disabled={!isOptionFieldType(field.type)}
+                  onOptionsChange={(options) => updateField(index, { options })}
                 />
               </div>
               <Button
