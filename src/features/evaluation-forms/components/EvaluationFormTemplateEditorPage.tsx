@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import { PageHeader } from '@/components/AppShell'
+import { FormFieldOptionsInput } from '@/components/FormFieldOptionsInput'
 import { ApiConfigAlert } from '@/components/ApiConfigAlert'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -237,18 +238,12 @@ function TemplateEditorFields({
               </div>
               <div className="min-w-0 flex-1 space-y-2">
                 <Label htmlFor={`options-${field.id}`}>Opções (separadas por vírgula)</Label>
-                <Input
+                <FormFieldOptionsInput
                   id={`options-${field.id}`}
-                  value={(field.options ?? []).join(', ')}
-                  onChange={(e) =>
-                    updateField(index, {
-                      options: e.target.value
-                        .split(',')
-                        .map((s) => s.trim())
-                        .filter(Boolean),
-                    })
-                  }
+                  fieldId={field.id}
+                  options={field.options}
                   disabled={!isOptionFieldType(field.type)}
+                  onOptionsChange={(options) => updateField(index, { options })}
                 />
               </div>
               <Button
