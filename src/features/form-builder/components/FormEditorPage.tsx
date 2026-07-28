@@ -235,8 +235,8 @@ function FormEditorFields({
                   Opções (separadas por vírgula)
                 </Label>
                 <FormFieldOptionsInput
+                  key={field.id}
                   id={`options-${field.id}`}
-                  fieldId={field.id}
                   options={field.options}
                   disabled={!isOptionFieldType(field.type)}
                   onOptionsChange={(options) => updateField(index, { options })}

@@ -239,8 +239,8 @@ function TemplateEditorFields({
               <div className="min-w-0 flex-1 space-y-2">
                 <Label htmlFor={`options-${field.id}`}>Opções (separadas por vírgula)</Label>
                 <FormFieldOptionsInput
+                  key={field.id}
                   id={`options-${field.id}`}
-                  fieldId={field.id}
                   options={field.options}
                   disabled={!isOptionFieldType(field.type)}
                   onOptionsChange={(options) => updateField(index, { options })}
