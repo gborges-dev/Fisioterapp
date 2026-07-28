@@ -29,7 +29,6 @@ export async function createEvaluationFormTemplate(
   return apiRequest<EvaluationFormTemplateRow>('/evaluation-form-templates', {
     method: 'POST',
     body: JSON.stringify({
-      workspace_id: workspaceId,
       title,
       description,
       schema,

@@ -1,6 +1,10 @@
+import TextAlign from '@tiptap/extension-text-align'
 import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import {
+  AlignCenter,
+  AlignLeft,
+  AlignRight,
   Bold,
   Italic,
   List,
@@ -26,7 +30,12 @@ export function RichTextEditor({
   minHeight?: number
 }) {
   const editor = useEditor({
-    extensions: [StarterKit],
+    extensions: [
+      StarterKit,
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+      }),
+    ],
     content: value || '',
     onUpdate: ({ editor: ed }) => {
       onChange(ed.getHTML())
@@ -99,6 +108,45 @@ export function RichTextEditor({
             onClick={() => editor.chain().focus().toggleOrderedList().run()}
           >
             <ListOrdered className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className={cn(
+              'h-8 w-8',
+              toolbarBtn(editor.isActive({ textAlign: 'left' })),
+            )}
+            aria-label="Alinhar à esquerda"
+            onClick={() => editor.chain().focus().setTextAlign('left').run()}
+          >
+            <AlignLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className={cn(
+              'h-8 w-8',
+              toolbarBtn(editor.isActive({ textAlign: 'center' })),
+            )}
+            aria-label="Centralizar"
+            onClick={() => editor.chain().focus().setTextAlign('center').run()}
+          >
+            <AlignCenter className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className={cn(
+              'h-8 w-8',
+              toolbarBtn(editor.isActive({ textAlign: 'right' })),
+            )}
+            aria-label="Alinhar à direita"
+            onClick={() => editor.chain().focus().setTextAlign('right').run()}
+          >
+            <AlignRight className="h-4 w-4" />
           </Button>
           <Button
             type="button"
