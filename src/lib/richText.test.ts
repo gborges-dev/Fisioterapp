@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { isRichTextEmpty, looksLikeHtml, previewPlainText, stripHtml } from './richText'
+import {
+  isRichTextEmpty,
+  looksLikeHtml,
+  previewPlainText,
+  sanitizeRichTextHtml,
+  stripHtml,
+} from './richText'
 
 describe('richText', () => {
   it('detecta HTML', () => {
@@ -22,5 +28,18 @@ describe('richText', () => {
     expect(previewPlainText('<p>Texto longo de evolução clínica</p>', 10)).toBe(
       'Texto long…',
     )
+  })
+
+  it('preserva alinhamento de texto na sanitização', () => {
+    expect(sanitizeRichTextHtml('<p style="text-align: center">Centro</p>')).toBe(
+      '<p style="text-align: center">Centro</p>',
+    )
+  })
+
+  it('remove estilos não permitidos na sanitização', () => {
+    expect(
+      sanitizeRichTextHtml('<p style="color: red; text-align: center">Texto</p>'),
+    ).toBe('<p style="text-align: center">Texto</p>')
+    expect(sanitizeRichTextHtml('<p style="color: red">Texto</p>')).toBe('<p>Texto</p>')
   })
 })

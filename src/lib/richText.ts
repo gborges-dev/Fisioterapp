@@ -1,3 +1,49 @@
+import DOMPurify from 'dompurify'
+
+export const RICH_TEXT_ALLOWED_TAGS = [
+  'p',
+  'br',
+  'strong',
+  'b',
+  'em',
+  'i',
+  'u',
+  'ul',
+  'ol',
+  'li',
+  'h3',
+  'a',
+]
+
+let richTextSanitizerReady = false
+
+function ensureRichTextSanitizer() {
+  if (richTextSanitizerReady) return
+
+  DOMPurify.addHook('uponSanitizeAttribute', (_node, data) => {
+    if (data.attrName !== 'style') return
+
+    const match = data.attrValue.match(/text-align:\s*(left|right|center|justify)/i)
+    if (!match) {
+      data.keepAttr = false
+      return
+    }
+
+    data.attrValue = `text-align: ${match[1].toLowerCase()}`
+  })
+
+  richTextSanitizerReady = true
+}
+
+export function sanitizeRichTextHtml(content: string): string {
+  ensureRichTextSanitizer()
+
+  return DOMPurify.sanitize(content, {
+    ALLOWED_TAGS: RICH_TEXT_ALLOWED_TAGS,
+    ALLOWED_ATTR: ['href', 'target', 'rel', 'style'],
+  })
+}
+
 export function stripHtml(html: string): string {
   if (!html) return ''
   return html

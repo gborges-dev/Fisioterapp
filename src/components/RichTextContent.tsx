@@ -1,22 +1,5 @@
-import DOMPurify from 'dompurify'
-
 import { cn } from '@/lib/utils'
-import { looksLikeHtml } from '@/lib/richText'
-
-const ALLOWED_TAGS = [
-  'p',
-  'br',
-  'strong',
-  'b',
-  'em',
-  'i',
-  'u',
-  'ul',
-  'ol',
-  'li',
-  'h3',
-  'a',
-]
+import { looksLikeHtml, sanitizeRichTextHtml } from '@/lib/richText'
 
 export function RichTextContent({
   content,
@@ -35,10 +18,7 @@ export function RichTextContent({
   }
 
   if (looksLikeHtml(content)) {
-    const safe = DOMPurify.sanitize(content, {
-      ALLOWED_TAGS,
-      ALLOWED_ATTR: ['href', 'target', 'rel'],
-    })
+    const safe = sanitizeRichTextHtml(content)
     return (
       <div
         className={cn(
