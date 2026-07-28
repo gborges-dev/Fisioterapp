@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 import { Input } from '@/components/ui/input'
 
@@ -11,7 +11,6 @@ function parseOptionsFromInput(value: string): string[] {
 
 type FormFieldOptionsInputProps = {
   id: string
-  fieldId: string
   options: string[] | undefined
   disabled?: boolean
   onOptionsChange: (options: string[]) => void
@@ -19,16 +18,11 @@ type FormFieldOptionsInputProps = {
 
 export function FormFieldOptionsInput({
   id,
-  fieldId,
   options,
   disabled,
   onOptionsChange,
 }: FormFieldOptionsInputProps) {
   const [draft, setDraft] = useState<string | null>(null)
-
-  useEffect(() => {
-    setDraft(null)
-  }, [fieldId])
 
   const displayValue = draft ?? (options ?? []).join(', ')
 
