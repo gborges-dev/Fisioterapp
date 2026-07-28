@@ -45,7 +45,6 @@ export function createFinanceEntry(
       ...body,
       amount:
         typeof body.amount === 'string' ? Number(body.amount) : body.amount,
-      workspace_id,
     }),
     workspaceId: workspace_id ?? getActiveWorkspaceId(),
   })

@@ -22,7 +22,6 @@ export async function createFormTemplate(
   return apiRequest<FormTemplateRow>('/form-templates', {
     method: 'POST',
     body: JSON.stringify({
-      workspace_id: workspaceId,
       title,
       schema,
     }),
@@ -54,7 +53,6 @@ export async function createFormLink(
   return apiRequest<FormLinkRow>('/form-links', {
     method: 'POST',
     body: JSON.stringify({
-      workspace_id: workspaceId,
       form_template_id: formTemplateId,
     }),
     workspaceId: workspaceId || getActiveWorkspaceId(),
