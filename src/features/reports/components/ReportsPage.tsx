@@ -108,7 +108,7 @@ export function ReportsPage() {
 
   const { data: patients, isLoading: loadingPatients } = usePatients()
   const { data: formTemplates, isLoading: loadingFormTemplates } =
-    useFormTemplates()
+    useFormTemplates(tab === '3')
   const evoReport = usePatientEvolutionReport(
     patient?.id ?? null,
     evoFrom,
@@ -119,6 +119,7 @@ export function ReportsPage() {
     to: cashTo,
     patientId: cashPatient?.id ?? null,
     type: null,
+    enabled: tab === '4',
   })
   const cashFlowRows = useMemo(
     () => cashFlowReport.data ?? [],
@@ -143,7 +144,7 @@ export function ReportsPage() {
   const cashPeriodInvalid =
     Boolean(cashFrom) && Boolean(cashTo) && cashFrom > cashTo
 
-  const overview = useDashboardEvolutionOverview()
+  const overview = useDashboardEvolutionOverview(tab === '1')
   const [overviewFilter, setOverviewFilter] = useState('')
   const { orderBy, order, handleRequestSort } =
     useSortState<OverviewSortKey>('fullName')
@@ -183,8 +184,8 @@ export function ReportsPage() {
     compare: overviewCompare,
   })
 
-  const clinicSummary = useClinicSummary(clinicFrom, clinicTo)
-  const clinicDaily = useClinicEvolutionDaily(clinicFrom, clinicTo)
+  const clinicSummary = useClinicSummary(clinicFrom, clinicTo, tab === '2')
+  const clinicDaily = useClinicEvolutionDaily(clinicFrom, clinicTo, tab === '2')
 
   const formSubmissionsReport = useFormSubmissionsReport(
     formTemplate?.id ?? null,

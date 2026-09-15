@@ -47,7 +47,11 @@ export function usePatientEvolutionReport(
   })
 }
 
-export function useClinicSummary(fromYmd: string, toYmd: string) {
+export function useClinicSummary(
+  fromYmd: string,
+  toYmd: string,
+  enabled = true,
+) {
   return useQuery({
     queryKey: queryKeys.reports.clinicSummary(fromYmd, toYmd),
     queryFn: async () => {
@@ -60,6 +64,7 @@ export function useClinicSummary(fromYmd: string, toYmd: string) {
       return data
     },
     enabled:
+      enabled &&
       Boolean(fromYmd) &&
       Boolean(toYmd) &&
       fromYmd <= toYmd &&
@@ -67,7 +72,11 @@ export function useClinicSummary(fromYmd: string, toYmd: string) {
   })
 }
 
-export function useClinicEvolutionDaily(fromYmd: string, toYmd: string) {
+export function useClinicEvolutionDaily(
+  fromYmd: string,
+  toYmd: string,
+  enabled = true,
+) {
   return useQuery({
     queryKey: queryKeys.reports.clinicEvolutionDaily(fromYmd, toYmd),
     queryFn: async () => {
@@ -80,6 +89,7 @@ export function useClinicEvolutionDaily(fromYmd: string, toYmd: string) {
       return data
     },
     enabled:
+      enabled &&
       Boolean(fromYmd) &&
       Boolean(toYmd) &&
       fromYmd <= toYmd &&

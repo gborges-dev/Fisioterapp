@@ -21,7 +21,7 @@ function isApiReady() {
   )
 }
 
-export function useFormTemplates() {
+export function useFormTemplates(enabled = true) {
   return useQuery({
     queryKey: queryKeys.forms.templates,
     queryFn: async () => {
@@ -29,7 +29,7 @@ export function useFormTemplates() {
       if (error) throw error
       return data ?? []
     },
-    enabled: isApiReady(),
+    enabled: enabled && isApiReady(),
     staleTime: 30_000,
   })
 }

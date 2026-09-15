@@ -19,6 +19,7 @@ export type FinanceListParams = {
   to: string
   patientId?: string | null
   type?: FinanceEntryType | null
+  enabled?: boolean
 }
 
 export type NewFinanceEntryInput = {
@@ -55,7 +56,10 @@ export function useFinanceEntries(params: FinanceListParams) {
       if (error) throw error
       return (data ?? []) as FinanceEntryWithPatient[]
     },
-    enabled: isApiReady() && Boolean(params.from && params.to),
+    enabled:
+      isApiReady() &&
+      Boolean(params.from && params.to) &&
+      (params.enabled ?? true),
   })
 }
 
