@@ -6,7 +6,15 @@ import { ThemedApp } from './ThemedApp'
 import { ColorModeProvider } from './theme/ColorModeProvider'
 import './styles.css'
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 30_000,
+      refetchOnWindowFocus: false,
+    },
+  },
+})
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -13,7 +13,7 @@ function isApiReady() {
   )
 }
 
-export function useDashboardEvolutionOverview() {
+export function useDashboardEvolutionOverview(enabled = true) {
   return useQuery({
     queryKey: queryKeys.dashboard.evolutionOverview,
     queryFn: async () => {
@@ -21,6 +21,6 @@ export function useDashboardEvolutionOverview() {
       if (error) throw error
       return data
     },
-    enabled: isApiReady(),
+    enabled: enabled && isApiReady(),
   })
 }
