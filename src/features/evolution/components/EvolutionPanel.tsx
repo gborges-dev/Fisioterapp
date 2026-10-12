@@ -37,7 +37,6 @@ type FormMode = 'create' | 'edit'
 const emptyForm = () => ({
   content: '',
   entryDate: new Date().toISOString().slice(0, 10),
-  evaluationFormId: '',
 })
 
 function rowToForm(row: EvolutionRow) {
@@ -69,13 +68,13 @@ export function EvolutionPanel({ patientId }: { patientId: string }) {
     [evaluationForms],
   )
 
+  // Mantém a ficha selecionada para registar várias evoluções seguidas.
   const resetForm = () => {
     const empty = emptyForm()
     setMode('create')
     setEditingId(null)
     setContent(empty.content)
     setEntryDate(empty.entryDate)
-    setEvaluationFormId(empty.evaluationFormId)
   }
 
   const startEdit = (row: EvolutionRow) => {
@@ -179,7 +178,7 @@ export function EvolutionPanel({ patientId }: { patientId: string }) {
               <div className="space-y-2">
                 <Label htmlFor="evaluation-form-select">Ficha de avaliação</Label>
                 <Select
-                  value={evaluationFormId || undefined}
+                  value={evaluationFormId}
                   onValueChange={setEvaluationFormId}
                   disabled={!formsAvailable}
                   required

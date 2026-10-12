@@ -76,7 +76,7 @@ export function EvaluationFormFieldsRenderer({
                 {field.required ? ' *' : ''}
               </Label>
               <Select
-                value={value || undefined}
+                value={value || ''}
                 onValueChange={(v) => onChange?.(field.id, v)}
                 required={field.required}
               >
