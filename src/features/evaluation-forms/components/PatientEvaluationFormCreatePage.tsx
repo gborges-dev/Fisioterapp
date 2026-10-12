@@ -146,7 +146,7 @@ export function PatientEvaluationFormCreatePage() {
         <div className="space-y-2">
           <Label htmlFor="template-select">Modelo de ficha</Label>
           <Select
-            value={templateId || undefined}
+            value={templateId}
             onValueChange={handleTemplateChange}
             required
           >

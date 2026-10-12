@@ -87,7 +87,7 @@ export function EvolutionEntriesAccordion({
     <Accordion
       type="single"
       collapsible
-      value={expandedId || undefined}
+      value={expandedId || ''}
       onValueChange={(v) => onExpandedChange(v || false)}
       className="space-y-2"
     >
