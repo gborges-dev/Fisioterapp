@@ -65,3 +65,30 @@ export function previewPlainText(content: string, maxLen = 80): string {
   if (plain.length <= maxLen) return plain
   return `${plain.slice(0, maxLen).trim()}…`
 }
+
+function decodeHtmlEntities(text: string): string {
+  if (typeof DOMParser === 'undefined') return text
+  return (
+    new DOMParser().parseFromString(text, 'text/html').documentElement
+      .textContent ?? text
+  )
+}
+
+/** Texto completo (sem truncar) preservando parágrafos, quebras e listas. */
+export function richTextToPlainText(content: string): string {
+  if (!content) return ''
+  if (!looksLikeHtml(content)) return content.trim()
+
+  const withBreaks = content
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<li[^>]*>/gi, '- ')
+    .replace(/<\/(p|h3|li)>/gi, '\n')
+    .replace(/<\/(ul|ol)>/gi, '\n')
+    .replace(/<[^>]*>/g, '')
+
+  return decodeHtmlEntities(withBreaks)
+    .replace(/\u00a0/g, ' ')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}

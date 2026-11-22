@@ -1,4 +1,5 @@
-import { Pencil, Trash2 } from 'lucide-react'
+import { Check, Copy, Pencil, Trash2 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 
 import { QueryErrorState } from '@/components/QueryErrorState'
 import { RichTextContent } from '@/components/RichTextContent'
@@ -16,9 +17,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { toastError, toastSuccess } from '@/components/toast'
 import { previewPlainText } from '@/lib/richText'
 import { cn } from '@/lib/utils'
 import type { EvolutionRow } from '../services/evolutionApi'
+import { copyRichTextToClipboard } from '../utils/copyRichText'
 
 export function formatEvolutionDate(iso: string) {
   try {
@@ -30,6 +33,51 @@ export function formatEvolutionDate(iso: string) {
   } catch {
     return iso
   }
+}
+
+/** 3 botões h-8 w-8 + 2 × gap-0.5 = 100px. */
+const ACTIONS_WIDTH = 'w-[6.25rem]'
+
+function CopyEntryButton({ content, dateLabel }: { content: string; dateLabel: string }) {
+  const [copied, setCopied] = useState(false)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(
+    () => () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    },
+    [],
+  )
+
+  async function handleCopy() {
+    try {
+      await copyRichTextToClipboard(content)
+      setCopied(true)
+      toastSuccess('Texto copiado.')
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+      timeoutRef.current = setTimeout(() => setCopied(false), 2000)
+    } catch {
+      toastError('Não foi possível copiar o texto.')
+    }
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-primary"
+          aria-label={`Copiar texto do registo de ${dateLabel}`}
+          onClick={handleCopy}
+        >
+          {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>{copied ? 'Copiado' : 'Copiar texto'}</TooltipContent>
+    </Tooltip>
+  )
 }
 
 export function EvolutionEntriesAccordion({
@@ -107,27 +155,20 @@ export function EvolutionEntriesAccordion({
               isEditing && 'border-primary ring-1 ring-primary',
             )}
           >
-            <AccordionTrigger className="px-4 py-3 hover:no-underline [&>svg]:self-center">
-              <div className="flex w-full min-w-0 items-start gap-2 pr-2">
-                <div className="min-w-0 flex-1 text-left">
-                  <div className="mb-0.5 flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-semibold text-foreground">
-                      {formatEvolutionDate(row.entry_date)}
-                    </span>
-                    <span className="text-sm text-muted-foreground">· {fichaTitle}</span>
-                    {isEditing ? (
-                      <Badge variant="default">A editar</Badge>
-                    ) : null}
-                  </div>
-                  {preview && !isExpanded ? (
-                    <p className="truncate text-sm text-muted-foreground">{preview}</p>
-                  ) : null}
-                </div>
+            <AccordionTrigger
+              className="px-4 py-3 hover:no-underline [&>svg]:self-center"
+              headerClassName="relative"
+              headerSlot={
                 <div
-                  className="flex shrink-0 items-center gap-0.5 self-center"
-                  onClick={(e) => e.stopPropagation()}
-                  onKeyDown={(e) => e.stopPropagation()}
-                >
+                  className={cn(
+                    'absolute right-10 top-1/2 flex -translate-y-1/2 items-center justify-end gap-0.5',
+                    ACTIONS_WIDTH,
+                  )}
+              >
+                  <CopyEntryButton
+                    content={row.content}
+                    dateLabel={formatEvolutionDate(row.entry_date)}
+                  />
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
@@ -160,6 +201,25 @@ export function EvolutionEntriesAccordion({
                     <TooltipContent>Eliminar registo</TooltipContent>
                   </Tooltip>
                 </div>
+              }
+            >
+              <div className="flex w-full min-w-0 items-start gap-2 pr-2">
+                <div className="min-w-0 flex-1 text-left">
+                  <div className="mb-0.5 flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-semibold text-foreground">
+                      {formatEvolutionDate(row.entry_date)}
+                    </span>
+                    <span className="text-sm text-muted-foreground">· {fichaTitle}</span>
+                    {isEditing ? (
+                      <Badge variant="default">A editar</Badge>
+                    ) : null}
+                  </div>
+                  {preview && !isExpanded ? (
+                    <p className="truncate text-sm text-muted-foreground">{preview}</p>
+                  ) : null}
+                </div>
+                {/* Reserva o espaço das ações, que ficam fora do <button> do trigger. */}
+                <span aria-hidden className={cn('shrink-0', ACTIONS_WIDTH)} />
               </div>
             </AccordionTrigger>
             <AccordionContent className="px-4 pb-4">
