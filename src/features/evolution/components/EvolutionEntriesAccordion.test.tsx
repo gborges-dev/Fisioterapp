@@ -105,3 +105,32 @@ describe('EvolutionEntriesAccordion — copiar', () => {
     expect(button.querySelector('.lucide-check')).toBeNull()
   })
 })
+
+describe('EvolutionEntriesAccordion — estrutura do cabeçalho', () => {
+  it('não aninha botões e mantém as ações fora do trigger', () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const onExpandedChange = renderAccordion()
+
+    expect(document.querySelector('button button')).toBeNull()
+    const nestingWarnings = errorSpy.mock.calls.filter((args) =>
+      args.some((a) => typeof a === 'string' && a.includes('descendant of')),
+    )
+    expect(nestingWarnings).toEqual([])
+    errorSpy.mockRestore()
+
+    const trigger = document.querySelector('[data-radix-collection-item]') as HTMLElement
+    expect(trigger.getAttribute('aria-expanded')).toBe('false')
+    expect(trigger.textContent).not.toMatch(/Copiar|Editar|Eliminar/)
+    expect(trigger.contains(screen.getByRole('button', { name: copyLabel }))).toBe(false)
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: `Editar registo de ${formatEvolutionDate(row.entry_date)}`,
+      }),
+    )
+    expect(onExpandedChange).not.toHaveBeenCalled()
+
+    fireEvent.click(trigger)
+    expect(onExpandedChange).toHaveBeenCalledWith('e1')
+  })
+})

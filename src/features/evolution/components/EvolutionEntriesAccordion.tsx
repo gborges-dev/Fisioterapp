@@ -35,6 +35,9 @@ export function formatEvolutionDate(iso: string) {
   }
 }
 
+/** 3 botões h-8 w-8 + 2 × gap-0.5 = 100px. */
+const ACTIONS_WIDTH = 'w-[6.25rem]'
+
 function CopyEntryButton({ content, dateLabel }: { content: string; dateLabel: string }) {
   const [copied, setCopied] = useState(false)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -152,27 +155,16 @@ export function EvolutionEntriesAccordion({
               isEditing && 'border-primary ring-1 ring-primary',
             )}
           >
-            <AccordionTrigger className="px-4 py-3 hover:no-underline [&>svg]:self-center">
-              <div className="flex w-full min-w-0 items-start gap-2 pr-2">
-                <div className="min-w-0 flex-1 text-left">
-                  <div className="mb-0.5 flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-semibold text-foreground">
-                      {formatEvolutionDate(row.entry_date)}
-                    </span>
-                    <span className="text-sm text-muted-foreground">· {fichaTitle}</span>
-                    {isEditing ? (
-                      <Badge variant="default">A editar</Badge>
-                    ) : null}
-                  </div>
-                  {preview && !isExpanded ? (
-                    <p className="truncate text-sm text-muted-foreground">{preview}</p>
-                  ) : null}
-                </div>
+            <AccordionTrigger
+              className="px-4 py-3 hover:no-underline [&>svg]:self-center"
+              headerClassName="relative"
+              headerSlot={
                 <div
-                  className="flex shrink-0 items-center gap-0.5 self-center"
-                  onClick={(e) => e.stopPropagation()}
-                  onKeyDown={(e) => e.stopPropagation()}
-                >
+                  className={cn(
+                    'absolute right-10 top-1/2 flex -translate-y-1/2 items-center justify-end gap-0.5',
+                    ACTIONS_WIDTH,
+                  )}
+              >
                   <CopyEntryButton
                     content={row.content}
                     dateLabel={formatEvolutionDate(row.entry_date)}
@@ -209,6 +201,25 @@ export function EvolutionEntriesAccordion({
                     <TooltipContent>Eliminar registo</TooltipContent>
                   </Tooltip>
                 </div>
+              }
+            >
+              <div className="flex w-full min-w-0 items-start gap-2 pr-2">
+                <div className="min-w-0 flex-1 text-left">
+                  <div className="mb-0.5 flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-semibold text-foreground">
+                      {formatEvolutionDate(row.entry_date)}
+                    </span>
+                    <span className="text-sm text-muted-foreground">· {fichaTitle}</span>
+                    {isEditing ? (
+                      <Badge variant="default">A editar</Badge>
+                    ) : null}
+                  </div>
+                  {preview && !isExpanded ? (
+                    <p className="truncate text-sm text-muted-foreground">{preview}</p>
+                  ) : null}
+                </div>
+                {/* Reserva o espaço das ações, que ficam fora do <button> do trigger. */}
+                <span aria-hidden className={cn('shrink-0', ACTIONS_WIDTH)} />
               </div>
             </AccordionTrigger>
             <AccordionContent className="px-4 pb-4">
