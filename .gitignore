@@ -29,3 +29,6 @@ dist-ssr
 
 # Supabase CLI (link local ao projeto remoto)
 supabase/.temp/
+
+# Maestri (pastas de trabalho dos agentes)
+.maestri/

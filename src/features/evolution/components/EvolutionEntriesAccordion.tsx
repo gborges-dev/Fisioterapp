@@ -1,4 +1,5 @@
-import { Pencil, Trash2 } from 'lucide-react'
+import { Check, Copy, Pencil, Trash2 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 
 import { QueryErrorState } from '@/components/QueryErrorState'
 import { RichTextContent } from '@/components/RichTextContent'
@@ -16,9 +17,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { toastError, toastSuccess } from '@/components/toast'
 import { previewPlainText } from '@/lib/richText'
 import { cn } from '@/lib/utils'
 import type { EvolutionRow } from '../services/evolutionApi'
+import { copyRichTextToClipboard } from '../utils/copyRichText'
 
 export function formatEvolutionDate(iso: string) {
   try {
@@ -30,6 +33,48 @@ export function formatEvolutionDate(iso: string) {
   } catch {
     return iso
   }
+}
+
+function CopyEntryButton({ content, dateLabel }: { content: string; dateLabel: string }) {
+  const [copied, setCopied] = useState(false)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(
+    () => () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    },
+    [],
+  )
+
+  async function handleCopy() {
+    try {
+      await copyRichTextToClipboard(content)
+      setCopied(true)
+      toastSuccess('Texto copiado.')
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+      timeoutRef.current = setTimeout(() => setCopied(false), 2000)
+    } catch {
+      toastError('Não foi possível copiar o texto.')
+    }
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-primary"
+          aria-label={`Copiar texto do registo de ${dateLabel}`}
+          onClick={handleCopy}
+        >
+          {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>{copied ? 'Copiado' : 'Copiar texto'}</TooltipContent>
+    </Tooltip>
+  )
 }
 
 export function EvolutionEntriesAccordion({
@@ -128,6 +173,10 @@ export function EvolutionEntriesAccordion({
                   onClick={(e) => e.stopPropagation()}
                   onKeyDown={(e) => e.stopPropagation()}
                 >
+                  <CopyEntryButton
+                    content={row.content}
+                    dateLabel={formatEvolutionDate(row.entry_date)}
+                  />
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
