@@ -1,4 +1,4 @@
-import { Loader2 } from 'lucide-react'
+import { Loader2, Plus } from 'lucide-react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 
 import { GlassPanel, PageHeader } from '@/components/AppShell'
@@ -13,18 +13,43 @@ import { usePatient } from '../hooks/usePatients'
 import {
   PATIENT_TABS,
   parsePatientTab,
+  patientTabPath,
   type PatientTab,
 } from '../patientTabs'
 import { calculateAge } from '../utils/age'
+import { patientInitials } from '../utils/initials'
 
-function Field({ label, value }: { label: string; value: string | null | undefined }) {
+type PatientData = NonNullable<ReturnType<typeof usePatient>['data']>
+
+function Field({
+  label,
+  value,
+  wide,
+}: {
+  label: string
+  value: string | null | undefined
+  wide?: boolean
+}) {
   const v = value?.trim()
   return (
-    <div className="mb-3">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="whitespace-pre-wrap">{v || '—'}</p>
+    <div className={wide ? 'sm:col-span-2' : undefined}>
+      <dt className="text-[13px] text-muted-foreground">{label}</dt>
+      <dd className="mt-0.5 whitespace-pre-wrap font-medium">{v || '—'}</dd>
     </div>
   )
+}
+
+function patientMeta(data: PatientData | null | undefined): string | undefined {
+  if (!data) return undefined
+  const birth = data.birth_date?.slice(0, 10)
+  const age = birth ? calculateAge(birth) : null
+  return [
+    age != null ? `${age} anos` : null,
+    data.sex ? sexPt(data.sex) : null,
+    data.phone?.trim() || null,
+  ]
+    .filter(Boolean)
+    .join(' · ') || undefined
 }
 
 function sexPt(s: string | null | undefined) {
@@ -41,42 +66,41 @@ const TAB_LABELS: Record<PatientTab, string> = {
   documentos: 'Documentos',
 }
 
-function PatientDadosPanel({
-  data,
-}: {
-  data: NonNullable<ReturnType<typeof usePatient>['data']>
-}) {
+function PatientDadosPanel({ data }: { data: PatientData }) {
+  const birth = data.birth_date?.slice(0, 10)
+  const age = birth ? calculateAge(birth) : null
   return (
-    <div>
-      <GlassPanel className="mb-6">
-        <Field
-          label="Data de nascimento"
-          value={data.birth_date?.slice(0, 10) ?? null}
-        />
-        <Field
-          label="Idade"
-          value={(() => {
-            const b = data.birth_date?.slice(0, 10)
-            if (!b) return null
-            const a = calculateAge(b)
-            return a != null ? String(a) : null
-          })()}
-        />
-        <Field label="Sexo" value={sexPt(data.sex)} />
-        <Field label="Telefone" value={data.phone} />
-        <Field label="E-mail" value={data.email} />
-        <Field label="Endereço" value={data.address} />
-        <Field label="CPF" value={data.cpf} />
-        <Field label="Motivo da consulta" value={data.consultation_reason} />
-        <Field label="Notas" value={data.notes} />
+    <div className="flex flex-wrap items-start gap-5">
+      <GlassPanel className="min-w-0 flex-[3_1_460px] p-7">
+        <h2 className="display mb-5 text-2xl font-semibold leading-[30px]">
+          Dados pessoais
+        </h2>
+        <dl className="grid grid-cols-1 gap-x-7 gap-y-5 sm:grid-cols-2">
+          <Field
+            label="Data de nascimento"
+            value={
+              birth ? new Date(`${birth}T12:00:00`).toLocaleDateString('pt-BR') : null
+            }
+          />
+          <Field label="Idade" value={age != null ? `${age} anos` : null} />
+          <Field label="Sexo" value={sexPt(data.sex)} />
+          <Field label="CPF" value={data.cpf} />
+          <Field label="Telefone" value={data.phone} />
+          <Field label="E-mail" value={data.email} />
+          <Field label="Endereço" value={data.address} wide />
+        </dl>
       </GlassPanel>
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <Button variant="outline" asChild>
-          <Link to={`/patients/${data.id}/edit`}>Editar paciente</Link>
-        </Button>
-        <Button variant="ghost" asChild>
-          <Link to="/patients">Voltar à lista</Link>
-        </Button>
+      <div className="flex min-w-0 flex-[2_1_320px] flex-col gap-5">
+        <GlassPanel className="p-7">
+          <h2 className="display mb-2.5 text-2xl font-semibold leading-[30px]">
+            Motivo da consulta
+          </h2>
+          <p className="whitespace-pre-wrap">{data.consultation_reason?.trim() || '—'}</p>
+        </GlassPanel>
+        <GlassPanel className="p-7">
+          <h2 className="display mb-2.5 text-2xl font-semibold leading-[30px]">Notas</h2>
+          <p className="whitespace-pre-wrap">{data.notes?.trim() || '—'}</p>
+        </GlassPanel>
       </div>
     </div>
   )
@@ -111,6 +135,32 @@ export function PatientDetailPage() {
             : [{ label: 'Paciente' }]),
         ]}
         title={data?.full_name ?? 'Paciente'}
+        subtitle={patientMeta(data)}
+        leading={
+          data ? (
+            <span
+              className="hidden h-[72px] w-[72px] shrink-0 items-center justify-center rounded-full bg-accent text-[28px] font-semibold text-accent-foreground display sm:flex"
+              aria-hidden
+            >
+              {patientInitials(data.full_name)}
+            </span>
+          ) : null
+        }
+        actions={
+          data ? (
+            <>
+              <Button variant="outline" asChild>
+                <Link to={`/patients/${data.id}/edit`}>Editar paciente</Link>
+              </Button>
+              <Button asChild>
+                <Link to={patientTabPath(data.id, 'evolucao')}>
+                  <Plus />
+                  Nova evolução
+                </Link>
+              </Button>
+            </>
+          ) : null
+        }
       />
 
       <ApiConfigAlert />
@@ -134,9 +184,9 @@ export function PatientDetailPage() {
           onValueChange={(value) => handleTabChange(value as PatientTab)}
           className="mt-2"
         >
-          <div className="flex flex-col-reverse gap-4 md:flex-col">
+          <div className="flex flex-col-reverse gap-5 md:flex-col">
             <TabsList
-              className="h-auto w-full justify-start overflow-x-auto"
+              className="w-full justify-start self-start overflow-x-auto md:w-auto"
               aria-label="Secções do paciente"
             >
               {PATIENT_TABS.map((tab) => (

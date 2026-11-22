@@ -1,12 +1,14 @@
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import {
   Activity,
   Building2,
   ClipboardList,
+  CircleDollarSign,
   FileText,
   LayoutDashboard,
   LogOut,
+  MoreHorizontal,
   Moon,
-  Receipt,
   Sun,
   Users,
 } from 'lucide-react'
@@ -32,32 +34,30 @@ import { cn } from '@/lib/utils'
 import { useAuth } from '@/features/auth/AuthContext'
 import { useColorMode } from '@/theme/useColorMode'
 
-const clinicalNavItems = [
-  { to: '/', label: 'Painel', icon: LayoutDashboard },
-  { to: '/patients', label: 'Pacientes', icon: Users },
-  { to: '/evaluation-forms', label: 'Fichas de avaliação', icon: ClipboardList },
-  { to: '/forms', label: 'Formulários', icon: FileText },
-  { to: '/finance', label: 'Financeiro', icon: Receipt },
-  { to: '/reports', label: 'Relatórios', icon: Activity },
-] as const
+type NavConfig = {
+  to: string
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+}
 
-const bottomNavConfig = [
+const clinicalNavItems: NavConfig[] = [
   { to: '/', label: 'Painel', icon: LayoutDashboard },
   { to: '/patients', label: 'Pacientes', icon: Users },
   { to: '/evaluation-forms', label: 'Fichas', icon: ClipboardList },
   { to: '/forms', label: 'Formulários', icon: FileText },
-  { to: '/finance', label: 'Financeiro', icon: Receipt },
+  { to: '/finance', label: 'Financeiro', icon: CircleDollarSign },
   { to: '/reports', label: 'Relatórios', icon: Activity },
-] as const
+]
 
-function bottomNavValue(pathname: string): string {
+/** No celular, quatro atalhos ficam na barra e o resto vai para "Mais". */
+const MOBILE_PRIMARY = ['/', '/patients', '/evaluation-forms', '/finance']
+
+function sectionOf(pathname: string): string {
   if (pathname === '/' || pathname === '') return '/'
-  if (pathname.startsWith('/patients')) return '/patients'
-  if (pathname.startsWith('/evaluation-forms')) return '/evaluation-forms'
-  if (pathname.startsWith('/forms')) return '/forms'
-  if (pathname.startsWith('/finance')) return '/finance'
-  if (pathname.startsWith('/reports')) return '/reports'
-  return pathname
+  const match = [...clinicalNavItems, { to: '/admin/bases' }]
+    .filter((item) => item.to !== '/')
+    .find((item) => pathname.startsWith(item.to))
+  return match?.to ?? pathname
 }
 
 export type BreadcrumbItem = {
@@ -71,7 +71,7 @@ export function GlassPanel({
   ...props
 }: React.ComponentProps<'div'>) {
   return (
-    <div className={cn('glass rounded-2xl p-5', className)} {...props}>
+    <div className={cn('glass rounded-2xl p-5 sm:p-6', className)} {...props}>
       {children}
     </div>
   )
@@ -82,15 +82,20 @@ export function PageHeader({
   title,
   subtitle,
   actions,
+  leading,
 }: {
   breadcrumbs?: BreadcrumbItem[]
   title: string
   subtitle?: string
   actions?: ReactNode
+  /** Elemento à esquerda do título (por exemplo, o avatar do paciente). */
+  leading?: ReactNode
 }) {
+  // Páginas de primeiro nível (Painel › Página) dispensam o caminho de migalhas.
+  const showCrumbs = Boolean(breadcrumbs && breadcrumbs.length >= 3)
   return (
     <header className="mb-6 space-y-4">
-      {breadcrumbs && breadcrumbs.length > 0 ? (
+      {showCrumbs && breadcrumbs ? (
         <Breadcrumb>
           <BreadcrumbList>
             {breadcrumbs.map((item, i) => {
@@ -111,16 +116,19 @@ export function PageHeader({
           </BreadcrumbList>
         </Breadcrumb>
       ) : null}
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="space-y-1">
-          <h1 className="display text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
-            {title}
-          </h1>
-          {subtitle ? (
-            <p className="text-sm text-muted-foreground md:text-base">{subtitle}</p>
-          ) : null}
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="flex items-center gap-5">
+          {leading}
+          <div className="space-y-2">
+            <h1 className="display text-4xl font-semibold leading-[1.1] text-foreground md:text-[44px]">
+              {title}
+            </h1>
+            {subtitle ? (
+              <p className="max-w-xl text-base text-muted-foreground">{subtitle}</p>
+            ) : null}
+          </div>
         </div>
-        {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+        {actions ? <div className="flex flex-wrap items-center gap-2.5">{actions}</div> : null}
       </div>
     </header>
   )
@@ -144,43 +152,36 @@ export function EmptyState({
         className,
       )}
     >
-      <h2 className="display text-xl font-semibold text-foreground">{title}</h2>
+      <h2 className="display text-2xl font-semibold text-foreground">{title}</h2>
       {description ? (
-        <p className="mt-2 max-w-md text-sm text-muted-foreground">{description}</p>
+        <p className="mt-2 max-w-md text-muted-foreground">{description}</p>
       ) : null}
       {action ? <div className="mt-6">{action}</div> : null}
     </GlassPanel>
   )
 }
 
-function NavItem({
-  to,
-  label,
-  icon: Icon,
-  end,
-}: {
-  to: string
-  label: string
-  icon: React.ComponentType<{ className?: string }>
-  end?: boolean
-}) {
+function Brand({ compact = false }: { compact?: boolean }) {
   return (
-    <NavLink
-      to={to}
-      end={end}
-      className={({ isActive }) =>
-        cn(
-          'lift flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
-          isActive
-            ? 'bg-primary text-primary-foreground shadow-sm'
-            : 'text-foreground hover:bg-white/40 dark:hover:bg-white/5',
-        )
-      }
-    >
-      <Icon className="h-4 w-4 shrink-0" aria-hidden />
-      <span className="truncate">{label}</span>
+    <NavLink to="/" className="flex items-center gap-3 text-foreground no-underline">
+      <span
+        className={cn(
+          'flex shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground',
+          compact ? 'h-9 w-9' : 'h-10 w-10',
+        )}
+        aria-hidden
+      >
+        <Activity className={compact ? 'h-5 w-5' : 'h-[22px] w-[22px]'} />
+      </span>
+      <span className="display text-2xl font-semibold leading-none">Fisioterapp</span>
     </NavLink>
   )
+}
+
+function userInitials(name?: string | null): string {
+  const parts = (name ?? '').trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return 'FT'
+  return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase()
 }
 
 export function AppShell() {
@@ -188,180 +189,195 @@ export function AppShell() {
   const { user, logout, isSuperAdmin } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const mobileNavValue = useMemo(
-    () => bottomNavValue(location.pathname),
+  const currentSection = useMemo(
+    () => sectionOf(location.pathname),
     [location.pathname],
   )
 
-  const navItems = useMemo(
+  const navItems = useMemo<NavConfig[]>(
     () =>
       isSuperAdmin
         ? [...clinicalNavItems, { to: '/admin/bases', label: 'Bases', icon: Building2 }]
-        : [...clinicalNavItems],
+        : clinicalNavItems,
     [isSuperAdmin],
   )
+
+  const mobilePrimary = navItems.filter((item) => MOBILE_PRIMARY.includes(item.to))
+  const mobileMore = navItems.filter((item) => !MOBILE_PRIMARY.includes(item.to))
+  const moreActive = mobileMore.some((item) => item.to === currentSection)
 
   const handleLogout = () => {
     logout()
     navigate('/login')
   }
 
+  const themeLabel = mode === 'light' ? 'Ativar tema escuro' : 'Ativar tema claro'
+  const ThemeIcon = mode === 'light' ? Moon : Sun
+
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="flex min-h-svh">
-        {/* Desktop sidebar */}
-        <aside className="sticky top-0 hidden h-svh w-64 shrink-0 flex-col p-4 md:flex">
-          <div className="glass-strong lift rounded-2xl p-4">
+      <div className="flex min-h-svh flex-col">
+        {/* Navegação do computador */}
+        <header className="hidden border-b border-border bg-card md:block">
+          <div className="mx-auto flex min-h-[76px] max-w-[1240px] flex-wrap items-center gap-x-7 gap-y-2 px-8 py-3">
+            <Brand />
+            <nav
+              className="flex flex-1 flex-wrap items-center gap-1"
+              aria-label="Navegação principal"
+            >
+              {navItems.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.to === '/'}
+                  className={({ isActive }) =>
+                    cn(
+                      'inline-flex min-h-11 items-center rounded-full px-4 text-[15px] font-medium no-underline transition-colors',
+                      isActive
+                        ? 'bg-accent font-semibold text-accent-foreground'
+                        : 'text-foreground/80 hover:bg-muted hover:text-foreground',
+                    )
+                  }
+                >
+                  {item.label}
+                </NavLink>
+              ))}
+            </nav>
             <div className="flex items-center gap-3">
-              <div
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-chart-2 text-primary-foreground shadow-sm"
+              <span
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground"
                 aria-hidden
               >
-                <Activity className="h-5 w-5" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">Área clínica</p>
-                <p className="display truncate text-lg font-semibold leading-tight">
-                  Fisioterapp
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <nav
-            className="glass mt-4 flex flex-1 flex-col gap-1 rounded-2xl p-2"
-            aria-label="Navegação principal"
-          >
-            {navItems.map((item) => (
-              <NavItem
-                key={item.to}
-                to={item.to}
-                label={item.label}
-                icon={item.icon}
-                end={item.to === '/'}
-              />
-            ))}
-          </nav>
-
-          <div className="glass-strong mt-4 space-y-2 rounded-2xl p-3">
-            {user?.name ? (
-              <p className="truncate px-1 text-xs text-muted-foreground">{user.name}</p>
-            ) : null}
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1 lift"
-                onClick={toggleColorMode}
-                aria-label={mode === 'light' ? 'Ativar tema escuro' : 'Ativar tema claro'}
-              >
-                {mode === 'light' ? (
-                  <Moon className="h-4 w-4" />
-                ) : (
-                  <Sun className="h-4 w-4" />
-                )}
-                <span className="sr-only md:not-sr-only">
-                  {mode === 'light' ? 'Escuro' : 'Claro'}
-                </span>
-              </Button>
+                {userInitials(user?.name)}
+              </span>
+              <span className="max-w-40 truncate text-sm text-muted-foreground">
+                {user?.name || 'Fisioterapeuta'}
+              </span>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     variant="outline"
                     size="icon"
-                    className="lift shrink-0"
-                    onClick={handleLogout}
-                    aria-label="Sair"
+                    onClick={toggleColorMode}
+                    aria-label={themeLabel}
                   >
-                    <LogOut className="h-4 w-4" />
+                    <ThemeIcon className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Sair</TooltipContent>
+                <TooltipContent>{mode === 'light' ? 'Tema escuro' : 'Tema claro'}</TooltipContent>
               </Tooltip>
+              <Button variant="outline" onClick={handleLogout}>
+                <LogOut className="h-4 w-4" />
+                Sair
+              </Button>
             </div>
           </div>
-        </aside>
+        </header>
 
-        <div className="flex min-w-0 flex-1 flex-col">
-          {/* Mobile topbar */}
-          <header className="glass-strong sticky top-0 z-40 flex items-center justify-between gap-3 px-4 py-3 md:hidden">
-            <div className="flex min-w-0 items-center gap-2">
-              <div
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-chart-2 text-primary-foreground"
-                aria-hidden
-              >
-                <Activity className="h-4 w-4" />
-              </div>
-              <span className="display truncate text-base font-semibold">Fisioterapp</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleColorMode}
-                aria-label={mode === 'light' ? 'Ativar tema escuro' : 'Ativar tema claro'}
-              >
-                {mode === 'light' ? (
-                  <Moon className="h-4 w-4" />
-                ) : (
-                  <Sun className="h-4 w-4" />
-                )}
-              </Button>
-              <Button variant="ghost" size="icon" onClick={handleLogout} aria-label="Sair">
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </div>
-          </header>
+        {/* Barra superior do celular */}
+        <header className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-border bg-card px-4 py-2.5 md:hidden">
+          <Brand compact />
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" onClick={toggleColorMode} aria-label={themeLabel}>
+              <ThemeIcon className="h-5 w-5" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={handleLogout} aria-label="Sair">
+              <LogOut className="h-5 w-5" />
+            </Button>
+          </div>
+        </header>
 
-          <main className="flex-1 px-4 py-4 sm:px-6 sm:py-6 md:pb-6">
-            {isSuperAdmin ? (
-              <div className="mb-4 md:hidden">
-                <Button variant="outline" size="sm" asChild className="lift">
-                  <NavLink to="/admin/bases">Bases</NavLink>
-                </Button>
-              </div>
-            ) : null}
-            <div key={location.pathname} className="page-enter">
-              <Outlet />
-            </div>
-          </main>
-        </div>
+        <main className="mx-auto w-full max-w-[1240px] flex-1 px-4 pb-28 pt-6 sm:px-8 md:pb-16 md:pt-10">
+          <div key={location.pathname} className="page-enter">
+            <Outlet />
+          </div>
+        </main>
 
-        {/* Mobile bottom nav */}
+        {/* Barra inferior do celular */}
         <nav
-          className="glass-strong fixed bottom-4 left-4 right-4 z-40 rounded-2xl px-2 py-1.5 md:hidden"
-          style={{ paddingBottom: 'max(0.375rem, env(safe-area-inset-bottom))' }}
+          className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card px-2 pt-2 md:hidden"
+          style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}
           aria-label="Navegação principal"
         >
-          <div className="flex items-center justify-around gap-0.5">
-            {bottomNavConfig.map((item) => {
+          <div className="flex items-start justify-around gap-1">
+            {mobilePrimary.map((item) => {
               const Icon = item.icon
-              const isActive = mobileNavValue === item.to
+              const isActive = currentSection === item.to
               return (
                 <NavLink
                   key={item.to}
                   to={item.to}
                   end={item.to === '/'}
                   className={cn(
-                    'lift flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-medium transition-colors',
+                    'flex min-w-0 flex-1 flex-col items-center gap-0.5 text-[11px] no-underline',
                     isActive
-                      ? 'text-primary'
-                      : 'text-muted-foreground hover:text-foreground',
+                      ? 'font-bold text-accent-foreground'
+                      : 'font-medium text-muted-foreground',
                   )}
                 >
-                  <Icon className="h-4 w-4 shrink-0" aria-hidden />
-                  <span className="truncate max-[359px]:hidden">{item.label}</span>
+                  <span
+                    className={cn(
+                      'flex h-8 w-14 items-center justify-center rounded-full',
+                      isActive && 'bg-accent',
+                    )}
+                  >
+                    <Icon className="h-[22px] w-[22px]" aria-hidden />
+                  </span>
+                  <span className="truncate">{item.label}</span>
                 </NavLink>
               )
             })}
+
+            {mobileMore.length > 0 ? (
+              <DropdownMenu.Root>
+                <DropdownMenu.Trigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      'flex min-w-0 flex-1 flex-col items-center gap-0.5 bg-transparent text-[11px]',
+                      moreActive
+                        ? 'font-bold text-accent-foreground'
+                        : 'font-medium text-muted-foreground',
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        'flex h-8 w-14 items-center justify-center rounded-full',
+                        moreActive && 'bg-accent',
+                      )}
+                    >
+                      <MoreHorizontal className="h-[22px] w-[22px]" aria-hidden />
+                    </span>
+                    <span>Mais</span>
+                  </button>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Portal>
+                  <DropdownMenu.Content
+                    side="top"
+                    align="end"
+                    sideOffset={8}
+                    className="z-50 min-w-48 rounded-2xl border border-border bg-popover p-1.5 shadow-lg"
+                  >
+                    {mobileMore.map((item) => {
+                      const Icon = item.icon
+                      return (
+                        <DropdownMenu.Item key={item.to} asChild>
+                          <NavLink
+                            to={item.to}
+                            className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-[15px] font-medium text-foreground no-underline outline-none data-[highlighted]:bg-muted"
+                          >
+                            <Icon className="h-5 w-5 text-muted-foreground" aria-hidden />
+                            {item.label}
+                          </NavLink>
+                        </DropdownMenu.Item>
+                      )
+                    })}
+                  </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+              </DropdownMenu.Root>
+            ) : null}
           </div>
         </nav>
-
-        {/* Spacer for mobile bottom nav */}
-        <div
-          className="pointer-events-none fixed bottom-0 left-0 right-0 h-20 md:hidden"
-          aria-hidden
-        />
       </div>
     </TooltipProvider>
   )

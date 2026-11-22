@@ -47,10 +47,9 @@ export function GlassAreaChart({
           />
           <Tooltip
             contentStyle={{
-              background: 'color-mix(in oklab, var(--card) 75%, transparent)',
+              background: 'var(--card)',
               border: '1px solid var(--border)',
               borderRadius: '0.75rem',
-              backdropFilter: 'blur(12px)',
             }}
             labelStyle={{ color: 'var(--foreground)' }}
             itemStyle={{ color: 'var(--foreground)' }}

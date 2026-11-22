@@ -5,7 +5,6 @@ import { EmptyState, GlassPanel, PageHeader } from '@/components/AppShell'
 import { ApiConfigAlert } from '@/components/ApiConfigAlert'
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog'
 import { FilterableSelect } from '@/components/FilterableSelect'
-import { ListCard } from '@/components/ListCard'
 import { ListPageSkeleton } from '@/components/ListPageSkeleton'
 import { usePatients } from '@/features/patients/hooks/usePatients'
 import type { PatientRow } from '@/features/patients/services/patientsApi'
@@ -234,19 +233,25 @@ export function FinancePage() {
 
       <ApiConfigAlert />
 
-      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <GlassPanel className="py-4">
-          <p className="text-sm text-muted-foreground">Total de entradas</p>
-          <p className="display mt-1 text-2xl font-semibold text-chart-2">
-            {formatMoney(totals.entradas)}
+      <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+        <GlassPanel className="px-6 py-5">
+          <p className="text-sm text-muted-foreground">Entradas</p>
+          <p className="display mt-1.5 text-4xl font-semibold leading-[42px] text-[var(--positive-ink)]">
+            + {formatMoney(totals.entradas)}
           </p>
         </GlassPanel>
-        <GlassPanel className="py-4">
-          <p className="text-sm text-muted-foreground">Total de saídas</p>
-          <p className="display mt-1 text-2xl font-semibold text-destructive">
-            {formatMoney(totals.saidas)}
+        <GlassPanel className="px-6 py-5">
+          <p className="text-sm text-muted-foreground">Saídas</p>
+          <p className="display mt-1.5 text-4xl font-semibold leading-[42px] text-[var(--attention-ink)]">
+            − {formatMoney(totals.saidas)}
           </p>
         </GlassPanel>
+        <div className="rounded-2xl bg-primary px-6 py-5 text-primary-foreground">
+          <p className="text-sm opacity-80">Saldo do período</p>
+          <p className="display mt-1.5 text-4xl font-semibold leading-[42px]">
+            {formatMoney(totals.entradas - totals.saidas)}
+          </p>
+        </div>
       </div>
 
       <div className="mb-4 flex flex-col flex-wrap gap-3 md:flex-row">
@@ -320,65 +325,83 @@ export function FinancePage() {
       ) : null}
 
       {!isLoading && !isError && filtered.length > 0 ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {filtered.map((row) => (
-            <ListCard
-              key={row.id}
-              actions={
-                <>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-primary"
-                        aria-label="Editar lançamento"
-                        onClick={() => openEdit(row)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Editar</TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive hover:text-destructive"
-                        aria-label="Eliminar lançamento"
-                        onClick={() => setDeleteTarget(row)}
-                        disabled={remove.isPending}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Eliminar</TooltipContent>
-                  </Tooltip>
-                </>
-              }
-            >
-              <p
-                className={cn(
-                  'text-xs font-semibold uppercase tracking-wide',
-                  row.type === 'entrada' ? 'text-chart-2' : 'text-destructive',
-                )}
-              >
-                {row.type === 'entrada' ? 'Entrada' : 'Saída'}
-              </p>
-              <p className="display text-xl font-semibold">{formatMoney(row.amount)}</p>
-              <p className="mt-1 text-sm">{row.description.trim() || '—'}</p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {formatDate(row.entry_date)}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {row.patients?.full_name ?? 'Sem paciente'}
-              </p>
-            </ListCard>
-          ))}
-        </div>
+        <section className="overflow-hidden rounded-2xl border border-border bg-card">
+          <ul>
+            {filtered.map((row) => {
+              const isIn = row.type === 'entrada'
+              return (
+                <li
+                  key={row.id}
+                  className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border px-6 py-3.5 last:border-b-0"
+                >
+                  <span className="w-14 shrink-0 text-sm text-muted-foreground">
+                    {formatDate(row.entry_date).slice(0, 5)}
+                  </span>
+                  <span className="min-w-[200px] flex-[3_1_220px]">
+                    <span className="block font-semibold">
+                      {row.description.trim() || '—'}
+                    </span>
+                    <span className="block text-[13px] text-muted-foreground">
+                      {row.patients?.full_name ?? 'Sem paciente'}
+                    </span>
+                  </span>
+                  <span
+                    className={cn(
+                      'inline-flex h-[26px] items-center rounded-full px-2.5 text-xs font-semibold',
+                      isIn
+                        ? 'bg-[var(--positive-soft)] text-[var(--positive-ink)]'
+                        : 'bg-[var(--attention-soft)] text-[var(--attention-ink)]',
+                    )}
+                  >
+                    {isIn ? 'Entrada' : 'Saída'}
+                  </span>
+                  <span
+                    className={cn(
+                      'min-w-[130px] flex-[1_1_130px] text-right font-semibold tabular-nums',
+                      isIn
+                        ? 'text-[var(--positive-ink)]'
+                        : 'text-[var(--attention-ink)]',
+                    )}
+                  >
+                    {isIn ? '+' : '−'} {formatMoney(row.amount)}
+                  </span>
+                  <div className="flex gap-1">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Editar lançamento"
+                          onClick={() => openEdit(row)}
+                        >
+                          <Pencil className="h-[18px] w-[18px]" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Editar</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive"
+                          aria-label="Excluir lançamento"
+                          onClick={() => setDeleteTarget(row)}
+                          disabled={remove.isPending}
+                        >
+                          <Trash2 className="h-[18px] w-[18px]" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Excluir</TooltipContent>
+                    </Tooltip>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        </section>
       ) : null}
 
       <Dialog open={dialogOpen} onOpenChange={(v) => !v && closeDialog()}>
