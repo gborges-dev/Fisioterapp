@@ -15,9 +15,9 @@ function Alert({
       className={cn(
         'relative w-full rounded-2xl border px-4 py-3 text-sm glass-subtle [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground [&>svg~*]:pl-7',
         variant === 'destructive' &&
-          'border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive',
+          'border-destructive/40 bg-[var(--attention-soft)] text-[var(--attention-ink)] [&>svg]:text-[var(--attention-ink)]',
         variant === 'warning' &&
-          'border-chart-4/50 text-foreground [&>svg]:text-chart-4',
+          'border-chart-4/50 bg-[var(--attention-soft)] text-foreground [&>svg]:text-chart-4',
         className,
       )}
       {...props}
@@ -40,7 +40,7 @@ function AlertDescription({
 }: React.ComponentProps<'div'>) {
   return (
     <div
-      className={cn('text-sm [&_p]:leading-relaxed text-muted-foreground', className)}
+      className={cn('text-sm [&_p]:leading-relaxed', className)}
       {...props}
     />
   )

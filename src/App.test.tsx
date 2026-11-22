@@ -32,6 +32,6 @@ function renderWithProviders(ui: ReactElement) {
 describe('AppRoutes', () => {
   it('redireciona utilizador não autenticado para o login', () => {
     renderWithProviders(<AppRoutes />)
-    expect(screen.getByRole('heading', { name: 'Entrar no Fisioterapp' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Entrar' })).toBeInTheDocument()
   })
 })
